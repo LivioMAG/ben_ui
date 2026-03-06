@@ -1,0 +1,37 @@
+{
+  "theme": {
+    "primaryColor": "#ff2d55",
+    "primaryButtonTextColor": "#ffffff",
+    "secondaryColor": "#111827",
+    "backgroundColor": "#f3f4f6",
+    "cardBackgroundColor": "#ffffff",
+    "textColor": "#0f172a",
+    "mutedTextColor": "#475569",
+    "borderColor": "#dbe2ea"
+  },
+  "typography": {
+    "fontFamily": "Inter, Arial, sans-serif",
+    "baseSize": "16px",
+    "h1Size": "2.1rem",
+    "h2Size": "1.4rem"
+  },
+  "tracking": {
+    "facebook": {
+      "enabled": true,
+      "pixelId": "",
+      "completedEvent": "Lead"
+    },
+    "google": {
+      "enabled": true,
+      "measurementId": "",
+      "conversionId": "",
+      "conversionLabel": "",
+      "completedEvent": "generate_lead"
+    },
+    "tiktok": {
+      "enabled": true,
+      "pixelId": "",
+      "completedEvent": "SubmitForm"
+    }
+  }
+}
