@@ -3,14 +3,14 @@ import { ROLES } from './roles.js';
 import { getSupabase } from './supabase.js';
 
 const NAV_ITEMS = [
-  { href: '/dashboard.html', label: 'Dashboard', roles: [ROLES.ADMIN] },
-  { href: '/customers.html', label: 'Kunden', roles: [ROLES.ADMIN] },
-  { href: '/employees.html', label: 'Mitarbeiter', roles: [ROLES.ADMIN] },
-  { href: '/projects.html', label: 'Projekte', roles: [ROLES.ADMIN] },
-  { href: '/planner.html', label: 'Wochenplaner', roles: [ROLES.ADMIN] },
-  { href: '/time-tracking.html', label: 'Stunden', roles: [ROLES.ADMIN, ROLES.EMPLOYEE] },
-  { href: '/reports.html', label: 'Rapporte', roles: [ROLES.ADMIN, ROLES.EMPLOYEE] },
-  { href: '/kanban.html', label: 'Kanban', roles: [ROLES.ADMIN] }
+  { href: 'dashboard.html', label: 'Dashboard', roles: [ROLES.ADMIN] },
+  { href: 'customers.html', label: 'Kunden', roles: [ROLES.ADMIN] },
+  { href: 'employees.html', label: 'Mitarbeiter', roles: [ROLES.ADMIN] },
+  { href: 'projects.html', label: 'Projekte', roles: [ROLES.ADMIN] },
+  { href: 'planner.html', label: 'Wochenplaner', roles: [ROLES.ADMIN] },
+  { href: 'time-tracking.html', label: 'Stunden', roles: [ROLES.ADMIN, ROLES.EMPLOYEE] },
+  { href: 'reports.html', label: 'Rapporte', roles: [ROLES.ADMIN, ROLES.EMPLOYEE] },
+  { href: 'kanban.html', label: 'Kanban', roles: [ROLES.ADMIN] }
 ];
 
 export async function initProtectedPage({ roles }) {
@@ -26,7 +26,7 @@ export async function initProtectedPage({ roles }) {
 function renderNavigation(profile) {
   const nav = document.getElementById('main-nav');
   if (!nav) return;
-  const currentPath = window.location.pathname;
+  const currentPath = window.location.pathname.split('/').pop() || 'index.html';
   nav.innerHTML = NAV_ITEMS
     .filter((item) => item.roles.includes(profile.role))
     .map((item) => `<a class="${currentPath === item.href ? 'active' : ''}" href="${item.href}">${item.label}</a>`)
