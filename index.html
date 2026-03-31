@@ -1,2 +1,115 @@
-<!doctype html><html lang='de'><head><meta charset='UTF-8'><title>Bodenleger Tool</title><link rel='stylesheet' href='assets/css/styles.css'></head>
-<body><main><section><h1>Bodenleger Firmen-Tool</h1><p>Bitte anmelden.</p><a href='login.html'>Zum Login</a></section></main></body></html>
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dispo-Kalender Dashboard</title>
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <h1>Dispo Cockpit</h1>
+        <p>Kleinbetrieb · 10 Personen · KW-Planung</p>
+
+        <section class="card compact">
+          <h2>Kalenderwoche</h2>
+          <div class="week-switcher">
+            <button id="prevWeek" aria-label="Vorherige Woche">◀</button>
+            <strong id="weekLabel">KW</strong>
+            <button id="nextWeek" aria-label="Nächste Woche">▶</button>
+          </div>
+        </section>
+
+        <section class="card compact">
+          <h2>Statistik</h2>
+          <ul class="stats" id="statsList"></ul>
+        </section>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <h2>Disposition & Absenzen</h2>
+          <span class="pill">Demo mit Fake-Daten + localStorage</span>
+        </header>
+
+        <section class="grid">
+          <article class="card">
+            <h3>Neue Aufgabe eintragen</h3>
+            <form id="taskForm" class="form-grid">
+              <label>Projekt
+                <input type="text" name="project" placeholder="z. B. Umbau Büro" required />
+              </label>
+              <label>Mitarbeiter:in
+                <select name="person" id="personTaskSelect" required></select>
+              </label>
+              <label>Tag
+                <select name="day" id="daySelect" required></select>
+              </label>
+              <label>Von
+                <input type="time" name="start" required />
+              </label>
+              <label>Bis
+                <input type="time" name="end" required />
+              </label>
+              <label>Aufgabe
+                <input type="text" name="activity" placeholder="Montage, Support, Auslieferung ..." required />
+              </label>
+              <button type="submit">Aufgabe speichern</button>
+            </form>
+          </article>
+
+          <article class="card">
+            <h3>Neue Absenz erfassen</h3>
+            <form id="absenceForm" class="form-grid">
+              <label>Mitarbeiter:in
+                <select name="person" id="personAbsenceSelect" required></select>
+              </label>
+              <label>Typ
+                <select name="type" required>
+                  <option>Ferien</option>
+                  <option>Feiertag</option>
+                  <option>Militär</option>
+                  <option>Unfall</option>
+                  <option>Krankheit</option>
+                </select>
+              </label>
+              <label>Von
+                <input type="date" name="from" required />
+              </label>
+              <label>Bis
+                <input type="date" name="to" required />
+              </label>
+              <button type="submit">Absenz speichern</button>
+            </form>
+          </article>
+        </section>
+
+        <section class="card">
+          <h3>Wochen-Dispo (zeitabhängig)</h3>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tag</th>
+                  <th>Zeit</th>
+                  <th>Mitarbeiter:in</th>
+                  <th>Projekt</th>
+                  <th>Aufgabe</th>
+                </tr>
+              </thead>
+              <tbody id="taskTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3>Absenzen</h3>
+          <div class="chips" id="absenceChips"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
