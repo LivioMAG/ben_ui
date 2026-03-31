@@ -1,0 +1,6 @@
+<!doctype html><html lang='de'><head><meta charset='UTF-8'><title>Projekte</title><link rel='stylesheet' href='/assets/css/styles.css'></head>
+<body><header><nav id='main-nav'></nav><div><span id='current-user'></span> <button id='logout-btn'>Logout</button></div></header>
+<main><h1>Projekte</h1><p id='page-message' class='msg'></p>
+<form id='project-form'><input type='hidden' name='id'><label>Projekttitel <input name='project_title' required></label><label>Kunde <select id='customer_id' name='customer_id' required></select></label><label>Baustellenname <input name='site_name'></label><label>Baustellenadresse <input name='site_address'></label><label>Beschreibung <textarea name='description'></textarea></label><label>Startdatum <input name='start_date' type='date' required></label><label>Enddatum <input name='end_date' type='date'></label><label>Status <select name='status'><option>geplant</option><option selected>aktiv</option><option>pausiert</option><option>abgeschlossen</option></select></label><button>Speichern</button></form>
+<table id='projects-table'><thead><tr><th>Titel</th><th>Kunde</th><th>Status</th><th>Start</th><th>Ende</th><th>Aktion</th></tr></thead><tbody></tbody></table>
+</main><script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'></script><script type='module' src='/assets/js/projects.js'></script></body></html>
