@@ -1,17 +1,21 @@
 import { getSupabase } from './supabase.js';
 import { getCurrentProfile, ROLES } from './roles.js';
 
+function toAppUrl(path) {
+  return new URL(path, window.location.href).href;
+}
+
 export async function requireAuth(allowedRoles = [ROLES.ADMIN, ROLES.EMPLOYEE]) {
   const supabase = await getSupabase();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    window.location.href = '/login.html';
+    window.location.href = 'login.html';
     return null;
   }
 
   const profile = await getCurrentProfile();
   if (!profile || !allowedRoles.includes(profile.role)) {
-    window.location.href = '/index.html';
+    window.location.href = 'index.html';
     return null;
   }
   return { session, profile };
@@ -20,7 +24,7 @@ export async function requireAuth(allowedRoles = [ROLES.ADMIN, ROLES.EMPLOYEE]) 
 export async function logout() {
   const supabase = await getSupabase();
   await supabase.auth.signOut();
-  window.location.href = '/login.html';
+  window.location.href = 'login.html';
 }
 
 async function handleLoginForm() {
@@ -42,7 +46,7 @@ async function handleLoginForm() {
     }
 
     const profile = await getCurrentProfile();
-    window.location.href = profile?.role === ROLES.ADMIN ? '/dashboard.html' : '/reports.html';
+    window.location.href = profile?.role === ROLES.ADMIN ? 'dashboard.html' : 'reports.html';
   });
 }
 
@@ -59,7 +63,7 @@ async function handleResetForm() {
       return;
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/login.html`
+      redirectTo: toAppUrl('login.html')
     });
     msg.textContent = error ? error.message : 'Reset-Link wurde per E-Mail gesendet.';
   });
@@ -91,7 +95,7 @@ async function handleOtpForm() {
     }
 
     const profile = await getCurrentProfile();
-    window.location.href = profile?.role === ROLES.ADMIN ? '/dashboard.html' : '/reports.html';
+    window.location.href = profile?.role === ROLES.ADMIN ? 'dashboard.html' : 'reports.html';
   });
 }
 

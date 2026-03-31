@@ -3,7 +3,7 @@ let configCache = null;
 
 export async function loadSupabaseConfig() {
   if (configCache) return configCache;
-  const res = await fetch('/config/supabase.json', { cache: 'no-store' });
+  const res = await fetch('config/supabase.json', { cache: 'no-store' });
   if (!res.ok) throw new Error('Supabase-Konfiguration konnte nicht geladen werden.');
   configCache = await res.json();
   if (!configCache.supabaseUrl || !configCache.supabaseAnonKey) {

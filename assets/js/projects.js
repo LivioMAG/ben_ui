@@ -18,7 +18,7 @@ async function loadProjects() {
   if (error) return showMessage('page-message', error.message, true);
 
   const tbody = document.querySelector('#projects-table tbody');
-  tbody.innerHTML = data.map((p) => `<tr><td><a href='/project-detail.html?id=${p.id}'>${p.project_title}</a></td><td>${p.customers?.company_name || ''}</td><td>${p.status}</td><td>${formatDate(p.start_date)}</td><td>${formatDate(p.end_date)}</td><td><button data-edit='${JSON.stringify(p)}'>Bearbeiten</button><button data-del='${p.id}'>Löschen</button></td></tr>`).join('');
+  tbody.innerHTML = data.map((p) => `<tr><td><a href='project-detail.html?id=${p.id}'>${p.project_title}</a></td><td>${p.customers?.company_name || ''}</td><td>${p.status}</td><td>${formatDate(p.start_date)}</td><td>${formatDate(p.end_date)}</td><td><button data-edit='${JSON.stringify(p)}'>Bearbeiten</button><button data-del='${p.id}'>Löschen</button></td></tr>`).join('');
   tbody.querySelectorAll('[data-edit]').forEach((b) => b.onclick = () => fillForm(JSON.parse(b.dataset.edit)));
   tbody.querySelectorAll('[data-del]').forEach((b) => b.onclick = () => removeProject(b.dataset.del));
 }
