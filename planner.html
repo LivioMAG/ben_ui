@@ -1,0 +1,7 @@
+<!doctype html><html lang='de'><head><meta charset='UTF-8'><title>Wochenplaner</title><link rel='stylesheet' href='/assets/css/styles.css'></head>
+<body><header><nav id='main-nav'></nav><div><span id='current-user'></span> <button id='logout-btn'>Logout</button></div></header>
+<main><h1>Wochenplaner</h1><p id='page-message' class='msg'></p>
+<section><button id='prev-week'>Vorwoche</button> <strong id='planner-week'></strong> <button id='next-week'>Folgewoche</button></section>
+<form id='planner-form'><label>Mitarbeiter <select id='planner_employee_id' name='employee_id' required></select></label><label>Projekt <select id='planner_project_id' name='project_id' required></select></label><label>Datum <input type='date' name='entry_date' required></label><label>Startzeit <input type='time' name='start_time'></label><label>Endzeit <input type='time' name='end_time'></label><label>Aufgabe <input name='description'></label><label>Status <select name='status'><option>geplant</option><option>bestätigt</option><option>abgeschlossen</option></select></label><button>Eintrag speichern</button></form>
+<table id='planner-table'><thead><tr><th>Datum</th><th>Mitarbeiter</th><th>Projekt</th><th>Zeit</th><th>Beschreibung</th><th>Status</th></tr></thead><tbody></tbody></table>
+</main><script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'></script><script type='module' src='/assets/js/planner.js'></script></body></html>
