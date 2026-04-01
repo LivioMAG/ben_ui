@@ -6,7 +6,7 @@ const state = {
   session: null,
   currentThreadId: null,
   pollTimer: null,
-  lastSeenAssistantMessageId: null,
+  shownAssistantMessageIds: new Set(),
 };
 
 const ui = {
@@ -45,6 +45,16 @@ function addMessage(text, role) {
   node.textContent = text;
   ui.chatMessages.appendChild(node);
   ui.chatMessages.scrollTop = ui.chatMessages.scrollHeight;
+}
+
+function addAssistantMessageIfNew(row) {
+  if (!row?.id || state.shownAssistantMessageIds.has(row.id)) {
+    return false;
+  }
+
+  state.shownAssistantMessageIds.add(row.id);
+  addMessage(row.message, 'assistant');
+  return true;
 }
 
 function clearPolling() {
@@ -195,7 +205,7 @@ async function createFreshThread() {
   }
 
   state.currentThreadId = data.id;
-  state.lastSeenAssistantMessageId = null;
+  state.shownAssistantMessageIds = new Set();
 }
 
 async function deleteCurrentThread() {
@@ -206,36 +216,31 @@ async function deleteCurrentThread() {
 
   await state.supabase.from('chat_threads').delete().eq('id', state.currentThreadId);
   state.currentThreadId = null;
-  state.lastSeenAssistantMessageId = null;
+  state.shownAssistantMessageIds = new Set();
 }
 
 async function pollForAssistantReply(lastUserMessageCreatedAt) {
   clearPolling();
 
   state.pollTimer = setInterval(async () => {
-    let query = state.supabase
+    const { data, error } = await state.supabase
       .from('chat_messages')
       .select('id, message, created_at')
       .eq('thread_id', state.currentThreadId)
       .eq('role', 'assistant')
       .gt('created_at', lastUserMessageCreatedAt)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(1);
-
-    if (state.lastSeenAssistantMessageId !== null) {
-      query = query.gt('id', state.lastSeenAssistantMessageId);
-    }
-
-    const { data, error } = await query;
 
     if (error) {
       return;
     }
 
     if (data && data.length > 0) {
-      state.lastSeenAssistantMessageId = data[0].id;
-      addMessage(data[0].message, 'assistant');
-      clearPolling();
+      const appended = addAssistantMessageIfNew(data[0]);
+      if (appended) {
+        clearPolling();
+      }
     }
   }, 2000);
 }
