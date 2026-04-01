@@ -37,7 +37,7 @@
         <div class="tabs" role="tablist" aria-label="Authentifizierung">
           <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true">Login</button>
           <button class="tab-btn" data-tab="register" role="tab" aria-selected="false">Registrieren</button>
-          <button class="tab-btn" data-tab="otp" role="tab" aria-selected="false">OTP / Reset</button>
+          <button class="tab-btn" data-tab="reset" role="tab" aria-selected="false">Passwort vergessen</button>
         </div>
 
         <form id="loginForm" class="auth-form active" data-panel="login">
@@ -65,21 +65,25 @@
           <button type="submit">Konto registrieren</button>
         </form>
 
-        <form id="otpForm" class="auth-form" data-panel="otp">
-          <h2>Passwort vergessen / OTP Login</h2>
+        <form id="resetForm" class="auth-form" data-panel="reset">
+          <h2>Passwort vergessen</h2>
           <label>E-Mail
             <input type="email" name="email" required placeholder="name@firma.ch" />
           </label>
-          <button type="button" id="sendOtpBtn" class="ghost">OTP-Code senden</button>
-
-          <label>OTP-Code (6-stellig)
-            <input type="text" name="otpCode" inputmode="numeric" pattern="[0-9]{6}" placeholder="123456" />
-          </label>
-          <button type="button" id="verifyOtpBtn">Mit OTP einloggen</button>
+          <button type="button" id="sendResetBtn" class="ghost">Reset-Link senden</button>
 
           <div class="divider"></div>
 
-          <button type="button" id="sendResetBtn" class="ghost">Passwort-Reset-Link senden</button>
+          <label>Neues Passwort
+            <input
+              type="password"
+              name="newPassword"
+              minlength="6"
+              placeholder="Mindestens 6 Zeichen"
+              autocomplete="new-password"
+            />
+          </label>
+          <button type="button" id="updatePasswordBtn">Neues Passwort speichern</button>
         </form>
 
         <p class="notice">

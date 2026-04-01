@@ -7,10 +7,9 @@ const panels = document.querySelectorAll(".auth-form");
 
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
-const otpForm = document.getElementById("otpForm");
-const sendOtpBtn = document.getElementById("sendOtpBtn");
-const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+const resetForm = document.getElementById("resetForm");
 const sendResetBtn = document.getElementById("sendResetBtn");
+const updatePasswordBtn = document.getElementById("updatePasswordBtn");
 
 let supabaseClient = null;
 let authConfig = null;
@@ -28,16 +27,34 @@ async function loadConfig() {
   const defaultConfig = {
     supabaseUrl: "https://YOUR-PROJECT-ID.supabase.co",
     supabaseAnonKey: "YOUR-ANON-KEY",
-    redirectTo: window.location.origin
+    redirectTo: `${window.location.origin}${window.location.pathname}`
   };
 
   const response = await fetch(CONFIG_PATH).catch(() => null);
   if (!response || !response.ok) {
+    const fallbackResponse = await fetch(CONFIG_EXAMPLE_PATH).catch(() => null);
+    if (!fallbackResponse || !fallbackResponse.ok) {
+      setStatus(
+        `Config fehlt: ${CONFIG_PATH}. Bitte ${CONFIG_EXAMPLE_PATH} kopieren und ausfüllen.`,
+        "error"
+      );
+      return defaultConfig;
+    }
+
+    const fallbackParsed = await fallbackResponse.json().catch(() => null);
+    if (!fallbackParsed) {
+      setStatus("Config JSON ist ungültig formatiert.", "error");
+      return defaultConfig;
+    }
+
     setStatus(
-      `Config fehlt: ${CONFIG_PATH}. Bitte ${CONFIG_EXAMPLE_PATH} kopieren und ausfüllen.`,
-      "error"
+      `Hinweis: ${CONFIG_PATH} nicht gefunden. Nutze ${CONFIG_EXAMPLE_PATH} als Fallback.`,
+      "success"
     );
-    return defaultConfig;
+    return {
+      ...defaultConfig,
+      ...fallbackParsed
+    };
   }
 
   const parsed = await response.json().catch(() => null);
@@ -71,12 +88,11 @@ function setupAuthClient() {
 function bindEvents() {
   loginForm.addEventListener("submit", onLoginSubmit);
   registerForm.addEventListener("submit", onRegisterSubmit);
-  sendOtpBtn.addEventListener("click", onSendOtp);
-  verifyOtpBtn.addEventListener("click", onVerifyOtp);
   sendResetBtn.addEventListener("click", onResetPassword);
+  updatePasswordBtn.addEventListener("click", onUpdatePassword);
 
-  if (window.location.hash.includes("access_token")) {
-    setStatus("Reset-Link erkannt. Du kannst nun ein neues Passwort setzen (späterer Screen).", "success");
+  if (hasRecoveryTokens()) {
+    setStatus("Reset-Link erkannt. Bitte unten dein neues Passwort setzen.", "success");
   }
 }
 
@@ -144,64 +160,10 @@ async function onRegisterSubmit(event) {
   setStatus("Registrierung gestartet. Prüfe deine E-Mail für die Verifizierung.", "success");
 }
 
-async function onSendOtp() {
-  if (!assertClient()) return;
-
-  const data = new FormData(otpForm);
-  const email = String(data.get("email") || "").trim();
-
-  if (!email) {
-    setStatus("Bitte zuerst eine E-Mail eingeben.", "error");
-    return;
-  }
-
-  setStatus("OTP wird per E-Mail versendet…");
-
-  const { error } = await supabaseClient.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: false, emailRedirectTo: authConfig.redirectTo }
-  });
-
-  if (error) {
-    setStatus(`OTP-Versand fehlgeschlagen: ${error.message}`, "error");
-    return;
-  }
-
-  setStatus("OTP gesendet. Bitte E-Mail prüfen und den 6-stelligen Code eingeben.", "success");
-}
-
-async function onVerifyOtp() {
-  if (!assertClient()) return;
-
-  const data = new FormData(otpForm);
-  const email = String(data.get("email") || "").trim();
-  const token = String(data.get("otpCode") || "").trim();
-
-  if (!email || !token) {
-    setStatus("Bitte E-Mail und OTP-Code ausfüllen.", "error");
-    return;
-  }
-
-  setStatus("OTP wird geprüft…");
-
-  const { error } = await supabaseClient.auth.verifyOtp({
-    email,
-    token,
-    type: "email"
-  });
-
-  if (error) {
-    setStatus(`OTP ungültig: ${error.message}`, "error");
-    return;
-  }
-
-  setStatus("OTP korrekt. Du bist jetzt angemeldet.", "success");
-}
-
 async function onResetPassword() {
   if (!assertClient()) return;
 
-  const data = new FormData(otpForm);
+  const data = new FormData(resetForm);
   const email = String(data.get("email") || "").trim();
 
   if (!email) {
@@ -221,6 +183,35 @@ async function onResetPassword() {
   }
 
   setStatus("Reset-Link gesendet. Bitte Posteingang prüfen.", "success");
+}
+
+async function onUpdatePassword() {
+  if (!assertClient()) return;
+  if (!hasRecoveryTokens()) {
+    setStatus("Kein Reset-Token erkannt. Öffne zuerst den Link aus deiner E-Mail.", "error");
+    return;
+  }
+
+  const data = new FormData(resetForm);
+  const password = String(data.get("newPassword") || "").trim();
+  if (password.length < 6) {
+    setStatus("Das neue Passwort muss mindestens 6 Zeichen haben.", "error");
+    return;
+  }
+
+  setStatus("Passwort wird aktualisiert…");
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  if (error) {
+    setStatus(`Passwort konnte nicht gesetzt werden: ${error.message}`, "error");
+    return;
+  }
+
+  window.history.replaceState({}, document.title, window.location.pathname);
+  setStatus("Passwort erfolgreich geändert. Du kannst dich jetzt einloggen.", "success");
+}
+
+function hasRecoveryTokens() {
+  return window.location.hash.includes("access_token") || window.location.hash.includes("type=recovery");
 }
 
 function assertClient() {
