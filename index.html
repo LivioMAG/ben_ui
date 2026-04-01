@@ -1,100 +1,17 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="NebulaRTC Auth: Supabase Login, Registrierung und OTP-Code für Passwort vergessen."
-    />
-    <title>NebulaRTC · Login</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <title>Superface Minimal Setup</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main class="auth-layout">
-      <section class="brand-panel card">
-        <p class="eyebrow">NebulaRTC Platform</p>
-        <h1>Futuristische WebRTC-Plattform für Desktop Collaboration.</h1>
-        <p class="muted">
-          Minimalistisch, hell und fokussiert: sichere Anmeldung, Team-Räume und ultra-klare Call-Übersicht für die PC-Ansicht.
-        </p>
-
-        <ul class="feature-list">
-          <li>⚡ E-Mail + Passwort Login mit Supabase</li>
-          <li>🔐 Registrierung und Passwort vergessen via OTP-Code</li>
-          <li>🛰️ Main-Screen optimiert für WebRTC-Räume</li>
-        </ul>
-      </section>
-
-      <section class="auth-panel card" aria-live="polite">
-        <div class="tabs" role="tablist" aria-label="Authentifizierung">
-          <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true">Login</button>
-          <button class="tab-btn" data-tab="register" role="tab" aria-selected="false">Registrieren</button>
-          <button class="tab-btn" data-tab="reset" role="tab" aria-selected="false">Passwort vergessen</button>
-        </div>
-
-        <form id="loginForm" class="auth-form active" data-panel="login">
-          <h2>Willkommen zurück</h2>
-          <label>E-Mail
-            <input type="email" name="email" required placeholder="name@firma.ch" />
-          </label>
-          <label>Passwort
-            <input type="password" name="password" required minlength="6" placeholder="••••••••" />
-          </label>
-          <button type="submit">Mit Passwort anmelden</button>
-        </form>
-
-        <form id="registerForm" class="auth-form" data-panel="register">
-          <h2>Neues Konto erstellen</h2>
-          <label>Anzeigename
-            <input type="text" name="displayName" required minlength="2" placeholder="Max Muster" />
-          </label>
-          <label>E-Mail
-            <input type="email" name="email" required placeholder="name@firma.ch" />
-          </label>
-          <label>Passwort
-            <input type="password" name="password" required minlength="6" placeholder="Mindestens 6 Zeichen" />
-          </label>
-          <button type="submit">Konto registrieren</button>
-        </form>
-
-        <form id="resetForm" class="auth-form" data-panel="reset">
-          <h2>Passwort vergessen (OTP)</h2>
-          <label>E-Mail
-            <input type="email" name="email" required placeholder="name@firma.ch" />
-          </label>
-          <button type="button" id="sendOtpBtn" class="ghost">OTP-Code senden</button>
-
-          <div class="divider"></div>
-
-          <label>OTP-Code
-            <input
-              type="text"
-              name="otpCode"
-              inputmode="numeric"
-              minlength="6"
-              maxlength="6"
-              placeholder="123456"
-              autocomplete="one-time-code"
-            />
-          </label>
-          <button type="button" id="verifyOtpBtn">Code verifizieren & einloggen</button>
-        </form>
-
-        <p class="notice">
-          Supabase-Credentials werden aus <code>config/supabase.credentials.json</code> geladen (URL + ANON Public Key).
-        </p>
-        <p id="status" class="status">Bereit.</p>
-      </section>
+    <main class="container">
+      <h1>Superface Minimal Setup</h1>
+      <p>Nur ein minimales HTML/CSS/JavaScript-Projekt.</p>
+      <p>Lege deine Zugangsdaten in <code>superface.credentials.json</code> ab.</p>
     </main>
-
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
   </body>
 </html>
