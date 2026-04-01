@@ -1,12 +1,23 @@
 const SUPABASE_CONFIG_PATH = './supabase.credentials.json';
 const WEBHOOK_URL = '';
 
+const CHANNEL_LABELS = {
+  instagram: 'Instagram',
+  facebook: 'Facebook',
+  tiktok: 'TikTok',
+  linkedin: 'LinkedIn',
+  youtube: 'YouTube',
+  google_adwords: 'Google AdWords',
+};
+
 const state = {
   supabase: null,
   session: null,
   currentThreadId: null,
   pollTimer: null,
   shownAssistantMessageIds: new Set(),
+  campaigns: [],
+  selectedCampaignId: null,
 };
 
 const ui = {
@@ -28,6 +39,18 @@ const ui = {
   sendOtpBtn: document.getElementById('sendOtpBtn'),
   otpCode: document.getElementById('otpCode'),
   verifyOtpBtn: document.getElementById('verifyOtpBtn'),
+  authCard: document.getElementById('authCard'),
+  campaignOverview: document.getElementById('campaignOverview'),
+  campaignForm: document.getElementById('campaignForm'),
+  campaignName: document.getElementById('campaignName'),
+  campaignList: document.getElementById('campaignList'),
+  campaignEmpty: document.getElementById('campaignEmpty'),
+  campaignDetail: document.getElementById('campaignDetail'),
+  backToOverviewBtn: document.getElementById('backToOverviewBtn'),
+  campaignDetailTitle: document.getElementById('campaignDetailTitle'),
+  campaignDetailMeta: document.getElementById('campaignDetailMeta'),
+  campaignStatusSelect: document.getElementById('campaignStatusSelect'),
+  saveCampaignStatusBtn: document.getElementById('saveCampaignStatusBtn'),
 };
 
 function setAuthUi() {
@@ -37,6 +60,21 @@ function setAuthUi() {
   ui.sessionInfo.textContent = loggedIn
     ? `Eingeloggt als ${state.session.user.email}`
     : 'Nicht eingeloggt';
+
+  ui.authCard.classList.toggle('hidden', loggedIn);
+  if (!loggedIn) {
+    ui.campaignOverview.classList.add('hidden');
+    ui.campaignDetail.classList.add('hidden');
+    return;
+  }
+
+  if (state.selectedCampaignId) {
+    ui.campaignDetail.classList.remove('hidden');
+    ui.campaignOverview.classList.add('hidden');
+  } else {
+    ui.campaignOverview.classList.remove('hidden');
+    ui.campaignDetail.classList.add('hidden');
+  }
 }
 
 function addMessage(text, role) {
@@ -86,18 +124,29 @@ async function initSupabase() {
   state.session = data.session;
   setAuthUi();
 
-  state.supabase.auth.onAuthStateChange((_event, session) => {
+  state.supabase.auth.onAuthStateChange(async (_event, session) => {
     state.session = session;
-    setAuthUi();
-    if (session?.user) {
-      ensureProfile(session.user).catch((error) => {
-        console.error('Profil konnte nicht synchronisiert werden', error);
-      });
+    if (!session?.user) {
+      state.selectedCampaignId = null;
+      state.campaigns = [];
+      renderCampaigns();
+      setAuthUi();
+      return;
     }
+
+    try {
+      await ensureProfile(session.user);
+      await loadCampaigns();
+    } catch (error) {
+      alert(error.message);
+    }
+
+    setAuthUi();
   });
 
   if (state.session?.user) {
     await ensureProfile(state.session.user);
+    await loadCampaigns();
   }
 }
 
@@ -129,6 +178,144 @@ async function ensureProfile(user) {
   if (error) {
     throw new Error(`Profil konnte nicht angelegt werden: ${error.message}`);
   }
+}
+
+function renderCampaigns() {
+  ui.campaignList.innerHTML = '';
+
+  if (state.campaigns.length === 0) {
+    ui.campaignEmpty.classList.remove('hidden');
+    return;
+  }
+
+  ui.campaignEmpty.classList.add('hidden');
+
+  state.campaigns.forEach((campaign) => {
+    const item = document.createElement('article');
+    item.className = 'campaign-item';
+
+    const channels = (campaign.channels || [])
+      .map((key) => CHANNEL_LABELS[key] || key)
+      .join(', ');
+
+    item.innerHTML = `
+      <div class="campaign-item-head">
+        <strong>${campaign.name}</strong>
+        <span class="badge ${campaign.status}">${campaign.status === 'active' ? 'Aktiv' : 'Inaktiv'}</span>
+      </div>
+      <div>Kanäle: ${channels || '–'}</div>
+      <button type="button" data-open-campaign="${campaign.id}">Kampagne öffnen</button>
+    `;
+
+    ui.campaignList.appendChild(item);
+  });
+}
+
+function openCampaignDetail(campaignId) {
+  const campaign = state.campaigns.find((entry) => entry.id === campaignId);
+  if (!campaign) {
+    return;
+  }
+
+  state.selectedCampaignId = campaignId;
+  ui.campaignDetailTitle.textContent = campaign.name;
+  ui.campaignStatusSelect.value = campaign.status;
+
+  const channels = (campaign.channels || [])
+    .map((key) => CHANNEL_LABELS[key] || key)
+    .join(', ');
+
+  ui.campaignDetailMeta.textContent = `Kanäle: ${channels || '–'} · Erstellt am ${new Date(campaign.created_at).toLocaleString('de-DE')}`;
+
+  ui.campaignOverview.classList.add('hidden');
+  ui.campaignDetail.classList.remove('hidden');
+}
+
+function backToCampaignOverview() {
+  state.selectedCampaignId = null;
+  ui.campaignOverview.classList.remove('hidden');
+  ui.campaignDetail.classList.add('hidden');
+}
+
+async function loadCampaigns() {
+  const profileId = state.session?.user?.id;
+  if (!profileId) {
+    return;
+  }
+
+  const { data, error } = await state.supabase
+    .from('campaigns')
+    .select('id, name, channels, status, created_at')
+    .eq('profile_id', profileId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Kampagnen konnten nicht geladen werden: ${error.message}`);
+  }
+
+  state.campaigns = data || [];
+  renderCampaigns();
+}
+
+async function createCampaign(event) {
+  event.preventDefault();
+
+  const profileId = state.session?.user?.id;
+  const name = ui.campaignName.value.trim();
+  if (!profileId || !name) {
+    return;
+  }
+
+  const channels = Array.from(document.querySelectorAll('input[name="channels"]:checked'))
+    .map((input) => input.value)
+    .filter((channel) => channel === 'instagram');
+
+  if (channels.length === 0) {
+    alert('Aktuell ist nur Instagram verfügbar.');
+    return;
+  }
+
+  const { error } = await state.supabase.from('campaigns').insert({
+    profile_id: profileId,
+    name,
+    channels,
+    status: 'active',
+  });
+
+  if (error) {
+    alert(`Kampagne konnte nicht gespeichert werden: ${error.message}`);
+    return;
+  }
+
+  ui.campaignForm.reset();
+  const instagramInput = document.querySelector('input[name="channels"][value="instagram"]');
+  if (instagramInput) {
+    instagramInput.checked = true;
+  }
+
+  await loadCampaigns();
+}
+
+async function saveCampaignStatus() {
+  const campaignId = state.selectedCampaignId;
+  if (!campaignId) {
+    return;
+  }
+
+  const status = ui.campaignStatusSelect.value;
+  const { error } = await state.supabase
+    .from('campaigns')
+    .update({ status })
+    .eq('id', campaignId)
+    .eq('profile_id', state.session.user.id);
+
+  if (error) {
+    alert(`Status konnte nicht gespeichert werden: ${error.message}`);
+    return;
+  }
+
+  await loadCampaigns();
+  openCampaignDetail(campaignId);
 }
 
 async function login() {
@@ -309,6 +496,18 @@ function bindEvents() {
   ui.sendOtpBtn.addEventListener('click', sendOtp);
   ui.verifyOtpBtn.addEventListener('click', verifyOtp);
   ui.logoutBtn.addEventListener('click', () => state.supabase.auth.signOut());
+
+  ui.campaignForm.addEventListener('submit', createCampaign);
+  ui.backToOverviewBtn.addEventListener('click', backToCampaignOverview);
+  ui.saveCampaignStatusBtn.addEventListener('click', saveCampaignStatus);
+  ui.campaignList.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-open-campaign]');
+    if (!button) {
+      return;
+    }
+
+    openCampaignDetail(button.dataset.openCampaign);
+  });
 
   ui.openChatBtn.addEventListener('click', openChat);
   ui.closeChatBtn.addEventListener('click', closeChat);

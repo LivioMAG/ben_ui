@@ -21,6 +21,7 @@ body {
   border-bottom: 1px solid #e5e7eb;
   position: sticky;
   top: 0;
+  z-index: 5;
 }
 
 h1,
@@ -29,14 +30,15 @@ h3 {
   margin: 0;
 }
 
-.auth-shell {
+.app-shell {
   display: grid;
-  place-items: center;
+  place-items: start center;
   padding: 2rem 1rem;
+  gap: 1rem;
 }
 
 .card {
-  width: min(560px, 100%);
+  width: min(760px, 100%);
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
@@ -45,13 +47,18 @@ h3 {
   gap: 0.8rem;
 }
 
+.auth-card {
+  width: min(560px, 100%);
+}
+
 .auth-tabs {
   display: flex;
   gap: 0.5rem;
 }
 
 .tab,
-button {
+button,
+select {
   border: 1px solid #d1d5db;
   background: #fff;
   border-radius: 10px;
@@ -73,7 +80,8 @@ button:hover {
   display: grid;
 }
 
-input {
+input,
+select {
   width: 100%;
   border: 1px solid #d1d5db;
   border-radius: 10px;
@@ -101,16 +109,109 @@ button:disabled {
   opacity: 0.6;
 }
 
+.hidden {
+  display: none;
+}
+
+.campaign-form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.campaign-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.channels-fieldset {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.channel-option {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.channel-option input {
+  width: auto;
+}
+
+.channel-option small {
+  color: #6b7280;
+}
+
+.channel-option.disabled {
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+.channel-option.enabled {
+  border-color: #93c5fd;
+}
+
+.empty-state {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  padding: 0.7rem;
+}
+
+.campaign-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.campaign-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.campaign-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.badge.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.detail-row {
+  display: grid;
+  gap: 0.4rem;
+}
+
 .chat-modal {
   position: fixed;
   inset: 0;
   background: rgba(17, 24, 39, 0.45);
   display: grid;
   place-items: center;
-}
-
-.hidden {
-  display: none;
 }
 
 .chat-window {

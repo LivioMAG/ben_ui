@@ -3,18 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Supabase Chat</title>
+    <title>Jimmy Marketing Assistant</title>
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
     <header class="topbar">
-      <h1>Supabase Chat</h1>
+      <h1>Jimmy Marketing Assistant</h1>
       <button id="openChatBtn" class="chat-launch" disabled>Chat</button>
     </header>
 
-    <main class="auth-shell">
-      <section class="card">
+    <main class="app-shell">
+      <section id="authCard" class="card auth-card">
         <h2>Login / Registrierung</h2>
 
         <div class="auth-tabs">
@@ -46,6 +46,71 @@
           <span id="sessionInfo">Nicht eingeloggt</span>
           <button id="logoutBtn" class="ghost" disabled>Logout</button>
         </div>
+      </section>
+
+      <section id="campaignOverview" class="card hidden">
+        <div class="overview-header">
+          <h2>Deine Kampagnen</h2>
+        </div>
+
+        <form id="campaignForm" class="campaign-form">
+          <label>
+            Kampagnenname
+            <input id="campaignName" type="text" placeholder="z. B. Frühjahrsaktion 2026" required />
+          </label>
+
+          <fieldset class="channels-fieldset">
+            <legend>Werbekanäle</legend>
+            <label class="channel-option enabled">
+              <input type="checkbox" name="channels" value="instagram" checked />
+              <span>Instagram</span>
+            </label>
+            <label class="channel-option disabled">
+              <input type="checkbox" name="channels" value="facebook" disabled />
+              <span>Facebook <small>Bald verfügbar</small></span>
+            </label>
+            <label class="channel-option disabled">
+              <input type="checkbox" name="channels" value="tiktok" disabled />
+              <span>TikTok <small>Bald verfügbar</small></span>
+            </label>
+            <label class="channel-option disabled">
+              <input type="checkbox" name="channels" value="linkedin" disabled />
+              <span>LinkedIn <small>Bald verfügbar</small></span>
+            </label>
+            <label class="channel-option disabled">
+              <input type="checkbox" name="channels" value="youtube" disabled />
+              <span>YouTube <small>Bald verfügbar</small></span>
+            </label>
+            <label class="channel-option disabled">
+              <input type="checkbox" name="channels" value="google_adwords" disabled />
+              <span>Google AdWords <small>Bald verfügbar</small></span>
+            </label>
+          </fieldset>
+
+          <button type="submit">Neue Kampagne anlegen</button>
+        </form>
+
+        <div id="campaignEmpty" class="empty-state hidden">
+          Du hast noch keine Kampagnen. Lege deine erste Kampagne an.
+        </div>
+
+        <div id="campaignList" class="campaign-list"></div>
+      </section>
+
+      <section id="campaignDetail" class="card hidden">
+        <button id="backToOverviewBtn" class="ghost">← Zurück zur Übersicht</button>
+        <h2 id="campaignDetailTitle">Kampagne</h2>
+        <p id="campaignDetailMeta"></p>
+
+        <div class="detail-row">
+          <label for="campaignStatusSelect">Status</label>
+          <select id="campaignStatusSelect">
+            <option value="active">Aktiv</option>
+            <option value="inactive">Inaktiv</option>
+          </select>
+        </div>
+
+        <button id="saveCampaignStatusBtn">Status speichern</button>
       </section>
     </main>
 
