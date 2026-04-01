@@ -58,6 +58,11 @@ h1, h2 { margin: 0 0 8px; }
   gap: 8px;
 }
 
+.danger {
+  border-color: rgba(255, 107, 141, 0.6) !important;
+  color: #ffd7e2 !important;
+}
+
 button,
 input,
 select {
@@ -152,11 +157,33 @@ tbody tr[data-id]:hover {
 
 .chat-messages {
   margin: 12px 0;
-  max-height: 320px;
+  height: 50vh;
+  min-height: 280px;
+  max-height: 560px;
   overflow: auto;
   display: grid;
   gap: 10px;
   padding-right: 4px;
+}
+
+.chat-report-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.chat-card,
+.report-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.report-card {
+  grid-template-rows: auto 1fr;
+}
+
+.report-messages {
+  margin-bottom: 0;
 }
 
 .chat-message {
@@ -204,4 +231,10 @@ tbody tr[data-id]:hover {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .chat-report-layout {
+    grid-template-columns: 1fr;
+  }
 }
