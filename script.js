@@ -78,7 +78,46 @@ async function initSupabase() {
   state.supabase.auth.onAuthStateChange((_event, session) => {
     state.session = session;
     setAuthUi();
+    if (session?.user) {
+      ensureProfile(session.user).catch((error) => {
+        console.error('Profil konnte nicht synchronisiert werden', error);
+      });
+    }
   });
+
+  if (state.session?.user) {
+    await ensureProfile(state.session.user);
+  }
+}
+
+function getProfileName(user) {
+  const meta = user.user_metadata ?? {};
+  return (
+    meta.full_name ||
+    meta.name ||
+    (user.email ? user.email.split('@')[0] : null) ||
+    'Unbekannt'
+  );
+}
+
+async function ensureProfile(user) {
+  if (!user?.id) {
+    return;
+  }
+
+  const payload = {
+    id: user.id,
+    email: user.email,
+    name: getProfileName(user),
+  };
+
+  const { error } = await state.supabase
+    .from('profiles')
+    .upsert(payload, { onConflict: 'id' });
+
+  if (error) {
+    throw new Error(`Profil konnte nicht angelegt werden: ${error.message}`);
+  }
 }
 
 async function login() {
@@ -137,6 +176,8 @@ async function triggerWebhook() {
 }
 
 async function createFreshThread() {
+  await ensureProfile(state.session.user);
+
   if (state.currentThreadId) {
     await state.supabase.from('chat_threads').delete().eq('id', state.currentThreadId);
     state.currentThreadId = null;
