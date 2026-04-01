@@ -81,64 +81,21 @@ create table if not exists public.chat_messages (
   created_at timestamptz not null default now()
 );
 
-alter table public.profiles enable row level security;
-alter table public.chat_threads enable row level security;
-alter table public.chat_messages enable row level security;
+alter table public.profiles disable row level security;
+alter table public.chat_threads disable row level security;
+alter table public.chat_messages disable row level security;
 
 drop policy if exists "profiles_owner_select" on public.profiles;
-create policy "profiles_owner_select"
-  on public.profiles
-  for select
-  using (auth.uid() = id);
-
 drop policy if exists "profiles_owner_insert" on public.profiles;
-create policy "profiles_owner_insert"
-  on public.profiles
-  for insert
-  with check (auth.uid() = id);
-
 drop policy if exists "profiles_owner_update" on public.profiles;
-create policy "profiles_owner_update"
-  on public.profiles
-  for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
 
 drop policy if exists "threads_owner_select" on public.chat_threads;
-create policy "threads_owner_select"
-  on public.chat_threads
-  for select
-  using (auth.uid() = profile_id);
-
 drop policy if exists "threads_owner_insert" on public.chat_threads;
-create policy "threads_owner_insert"
-  on public.chat_threads
-  for insert
-  with check (auth.uid() = profile_id);
-
 drop policy if exists "threads_owner_delete" on public.chat_threads;
-create policy "threads_owner_delete"
-  on public.chat_threads
-  for delete
-  using (auth.uid() = profile_id);
 
 drop policy if exists "messages_owner_select" on public.chat_messages;
-create policy "messages_owner_select"
-  on public.chat_messages
-  for select
-  using (auth.uid() = profile_id);
-
 drop policy if exists "messages_owner_insert" on public.chat_messages;
-create policy "messages_owner_insert"
-  on public.chat_messages
-  for insert
-  with check (auth.uid() = profile_id);
-
 drop policy if exists "messages_owner_delete" on public.chat_messages;
-create policy "messages_owner_delete"
-  on public.chat_messages
-  for delete
-  using (auth.uid() = profile_id);
 
 create index if not exists idx_chat_messages_thread_created_at
   on public.chat_messages(thread_id, created_at desc);
