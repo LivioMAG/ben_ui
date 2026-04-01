@@ -362,20 +362,36 @@ async function verifyOtp() {
   }
 }
 
-async function triggerWebhook() {
+async function triggerWebhook(latestMessage = '') {
   const profileId = state.session?.user?.id;
-  if (!state.webhookUrl || !profileId) {
+  const threadId = state.currentThreadId;
+  const webhookUrl = state.webhookUrl?.trim();
+
+  if (!webhookUrl || !profileId || !threadId) {
     return;
   }
 
-  await fetch(state.webhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      profile_id: profileId,
-      type: state.chatOpenType ?? 0,
-    }),
-  });
+  const payload = {
+    profile_id: profileId,
+    thread_id: threadId,
+    type: state.chatOpenType ?? 0,
+    message: latestMessage,
+    sent_at: new Date().toISOString(),
+  };
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      console.error('Webhook call failed with non-2xx response.', response.status, response.statusText);
+    }
+  } catch (error) {
+    console.error('Webhook call failed before reaching n8n. Check CORS / endpoint configuration.', error);
+  }
 }
 
 async function createFreshThread() {
@@ -462,7 +478,7 @@ async function sendChatMessage(event) {
   addMessage(message, 'user');
   ui.chatInput.value = '';
 
-  await triggerWebhook();
+  await triggerWebhook(message);
   await pollForAssistantReply(data.created_at);
 }
 
