@@ -149,3 +149,59 @@ tbody tr[data-id]:hover {
     align-items: flex-start;
   }
 }
+
+.chat-messages {
+  margin: 12px 0;
+  max-height: 320px;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.chat-message {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(8, 14, 28, 0.6);
+}
+
+.chat-message header {
+  color: var(--muted);
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+
+.chat-message p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.role-benutzer {
+  border-color: rgba(109, 125, 255, 0.5);
+}
+
+.role-ki {
+  border-color: rgba(41, 214, 201, 0.5);
+}
+
+.chat-form {
+  display: grid;
+  gap: 10px;
+}
+
+.chat-form textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #0c1324;
+  color: var(--text);
+  padding: 11px 12px;
+  font: inherit;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}

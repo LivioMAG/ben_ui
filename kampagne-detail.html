@@ -3,27 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kampagnendetail</title>
+    <meta name="description" content="Detailansicht inkl. Chat und Zielgruppen für eine Kampagne." />
+    <title>Marketing AI Dashboard · Kampagnendetail</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="kampagnen.css" />
   </head>
   <body>
     <main class="dashboard">
+      <header class="topbar card">
+        <div>
+          <p class="eyebrow">Marketing-AI-Dashboard</p>
+          <h1 id="campaignTitle">Kampagne wird geladen…</h1>
+        </div>
+        <div class="header-actions">
+          <button type="button" id="backBtn" class="ghost">Zurück zur Übersicht</button>
+        </div>
+      </header>
+
       <section class="card">
-        <h1>Kampagnendetail</h1>
-        <p id="detailText">Lade Kampagne…</p>
-        <button type="button" id="backBtn" class="ghost">Zurück zur Übersicht</button>
+        <h2>Chat</h2>
+        <div id="chatMessages" class="chat-messages" aria-live="polite">
+          <p class="status">Lade Nachrichten…</p>
+        </div>
+
+        <form id="chatForm" class="chat-form">
+          <label>
+            Nachricht
+            <textarea
+              id="chatInput"
+              name="chatInput"
+              rows="3"
+              maxlength="2000"
+              required
+              placeholder="Nachricht an den Bot schreiben…"
+            ></textarea>
+          </label>
+          <button type="submit">Senden</button>
+        </form>
       </section>
+
+      <section class="card status-grid">
+        <label>
+          System-Status
+          <input id="systemStatus" type="text" readonly value="–" />
+        </label>
+        <label>
+          Bericht-Status
+          <input id="reportStatus" type="text" readonly value="–" />
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Zielgruppen</h2>
+
+        <label>
+          Zielgruppe auswählen
+          <select id="audienceSelect">
+            <option value="">Keine Zielgruppe</option>
+          </select>
+        </label>
+
+        <form id="audienceForm" class="campaign-form">
+          <label>
+            Name
+            <input id="audienceName" name="audienceName" type="text" required minlength="2" placeholder="z. B. Retargeting Käufer" />
+          </label>
+
+          <label>
+            Typ
+            <select id="audienceType" name="audienceType" required>
+              <option value="breit">Breit</option>
+              <option value="interessen">Interessen</option>
+              <option value="lookalike">Lookalike</option>
+              <option value="retargeting">Retargeting</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+
+          <label>
+            Tagesbudget (CHF)
+            <input id="audienceBudget" name="audienceBudget" type="number" min="0" step="0.01" placeholder="50" />
+          </label>
+
+          <label>
+            Beschreibung
+            <input id="audienceDescription" name="audienceDescription" type="text" maxlength="250" placeholder="Kurze Beschreibung" />
+          </label>
+
+          <button type="submit">Zielgruppe erstellen</button>
+        </form>
+      </section>
+
+      <p id="status" class="status">Bereit.</p>
     </main>
-    <script>
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get("id");
-      const detailText = document.getElementById("detailText");
-      detailText.textContent = id
-        ? `Du hast die Kampagne mit der ID ${id} geöffnet. Hier folgt als nächster Schritt die Detailansicht.`
-        : "Keine Kampagnen-ID gefunden.";
-      document.getElementById("backBtn").addEventListener("click", () => {
-        window.location.assign("./kampagnen.html");
-      });
-    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="kampagne-detail.js"></script>
   </body>
 </html>
