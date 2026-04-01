@@ -214,6 +214,10 @@ button:disabled {
   place-items: center;
 }
 
+.chat-modal.hidden {
+  display: none;
+}
+
 .chat-window {
   width: min(520px, 92vw);
   height: min(680px, 90vh);
