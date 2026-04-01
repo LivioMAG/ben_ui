@@ -10,6 +10,7 @@ const registerForm = document.getElementById("registerForm");
 const resetForm = document.getElementById("resetForm");
 const sendResetBtn = document.getElementById("sendResetBtn");
 const updatePasswordBtn = document.getElementById("updatePasswordBtn");
+const DASHBOARD_PATH = "./kampagnen.html";
 
 let supabaseClient = null;
 let authConfig = null;
@@ -21,6 +22,7 @@ async function init() {
   authConfig = await loadConfig();
   setupAuthClient();
   bindEvents();
+  await redirectIfAlreadyLoggedIn();
 }
 
 async function loadConfig() {
@@ -129,7 +131,8 @@ async function onLoginSubmit(event) {
     return;
   }
 
-  setStatus("Login erfolgreich. Weiterleitung zum Dashboard vorbereiten.", "success");
+  setStatus("Login erfolgreich. Weiterleitung zur Kampagnenübersicht…", "success");
+  window.location.assign(DASHBOARD_PATH);
 }
 
 async function onRegisterSubmit(event) {
@@ -218,6 +221,13 @@ function assertClient() {
   if (supabaseClient) return true;
   setStatus("Supabase nicht initialisiert. Konfiguriere zuerst die JSON-Datei.", "error");
   return false;
+}
+
+async function redirectIfAlreadyLoggedIn() {
+  if (!supabaseClient || hasRecoveryTokens()) return;
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error || !data.session) return;
+  window.location.assign(DASHBOARD_PATH);
 }
 
 function setStatus(message, type = "") {

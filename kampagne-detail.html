@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kampagnendetail</title>
+    <link rel="stylesheet" href="kampagnen.css" />
+  </head>
+  <body>
+    <main class="dashboard">
+      <section class="card">
+        <h1>Kampagnendetail</h1>
+        <p id="detailText">Lade Kampagne…</p>
+        <button type="button" id="backBtn" class="ghost">Zurück zur Übersicht</button>
+      </section>
+    </main>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      const detailText = document.getElementById("detailText");
+      detailText.textContent = id
+        ? `Du hast die Kampagne mit der ID ${id} geöffnet. Hier folgt als nächster Schritt die Detailansicht.`
+        : "Keine Kampagnen-ID gefunden.";
+      document.getElementById("backBtn").addEventListener("click", () => {
+        window.location.assign("./kampagnen.html");
+      });
+    </script>
+  </body>
+</html>

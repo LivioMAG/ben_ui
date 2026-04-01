@@ -151,6 +151,19 @@ Enthalten ist ein moderner Auth-Screen mit:
 - Passwort vergessen (Reset-Link per E-Mail)
 - Passwort direkt neu setzen nach Recovery-Link
 
+### Kampagnenübersicht (HTML/CSS/JS)
+Nach erfolgreichem Login erfolgt die Weiterleitung auf `kampagnen.html`.
+Dort ist enthalten:
+- Formular zum Erstellen einer Kampagne (Name + Plattform)
+- Plattform-Auswahl mit `Instagram` aktiv, `Facebook` und `TikTok` sichtbar aber deaktiviert
+- Standardwerte beim Erstellen: `CHF`, `Europe/Zurich`, `aktiv`
+- Tabellenansicht aller Kampagnen mit:
+  - Name, Plattform, Währung, Zeitzone, Status
+  - zuletzt synchronisiert
+  - erstellt am
+- Klick auf eine Zeile öffnet die vorbereitete Detailseite `kampagne-detail.html`
+- Logout-Button + Einstellungs-Button
+
 ### Supabase-Credentials via JSON
 Lege eine Datei `config/supabase.credentials.json` an (nicht committen) auf Basis von:
 - `config/supabase.credentials.example.json`
