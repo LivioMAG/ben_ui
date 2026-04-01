@@ -1,159 +1,236 @@
-// Mobile menu toggle
-const mobileToggle = document.getElementById('mobileToggle');
-const siteNav = document.getElementById('siteNav');
+const CONFIG_PATH = "./config/supabase.credentials.json";
+const CONFIG_EXAMPLE_PATH = "./config/supabase.credentials.example.json";
 
-mobileToggle?.addEventListener('click', () => {
-  const isOpen = siteNav.classList.toggle('open');
-  mobileToggle.setAttribute('aria-expanded', String(isOpen));
-});
+const statusEl = document.getElementById("status");
+const tabButtons = document.querySelectorAll(".tab-btn");
+const panels = document.querySelectorAll(".auth-form");
 
-// Close mobile nav after clicking a link
-siteNav?.querySelectorAll('a').forEach((link) => {
-  link.addEventListener('click', () => {
-    siteNav.classList.remove('open');
-    mobileToggle.setAttribute('aria-expanded', 'false');
-  });
-});
+const loginForm = document.getElementById("loginForm");
+const registerForm = document.getElementById("registerForm");
+const otpForm = document.getElementById("otpForm");
+const sendOtpBtn = document.getElementById("sendOtpBtn");
+const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+const sendResetBtn = document.getElementById("sendResetBtn");
 
-// Variant selection state
-const watchImage = document.getElementById('watchImage');
-const selectionNote = document.getElementById('selectionNote');
-const productName = document.getElementById('productName');
+let supabaseClient = null;
+let authConfig = null;
 
-const imageByColor = {
-  'Midnight Black': 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=1200&q=80',
-  'Champagne Gold': 'https://images.unsplash.com/photo-1547996160-81dfa63595aa?auto=format&fit=crop&w=1200&q=80',
-  'Silver Steel': 'https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=1200&q=80'
-};
+void init();
 
-let selectedColor = 'Midnight Black';
-let selectedSize = '40 mm';
+async function init() {
+  setupTabs();
+  authConfig = await loadConfig();
+  setupAuthClient();
+  bindEvents();
+}
 
-const syncSelectionUI = () => {
-  selectionNote.textContent = `Selected: ${selectedColor} · ${selectedSize}`;
-  productName.textContent = `Signature One — ${selectedColor} / ${selectedSize}`;
-  watchImage.src = imageByColor[selectedColor];
-  watchImage.alt = `Aurelius Atelier ${selectedColor} watch`;
-};
+async function loadConfig() {
+  const defaultConfig = {
+    supabaseUrl: "https://YOUR-PROJECT-ID.supabase.co",
+    supabaseAnonKey: "YOUR-ANON-KEY",
+    redirectTo: window.location.origin
+  };
 
-const handleChipGroup = (groupId, key) => {
-  const group = document.getElementById(groupId);
-  if (!group) return;
+  const response = await fetch(CONFIG_PATH).catch(() => null);
+  if (!response || !response.ok) {
+    setStatus(
+      `Config fehlt: ${CONFIG_PATH}. Bitte ${CONFIG_EXAMPLE_PATH} kopieren und ausfüllen.`,
+      "error"
+    );
+    return defaultConfig;
+  }
 
-  group.addEventListener('click', (event) => {
-    const button = event.target.closest('.chip');
-    if (!button) return;
+  const parsed = await response.json().catch(() => null);
+  if (!parsed) {
+    setStatus("Config JSON ist ungültig formatiert.", "error");
+    return defaultConfig;
+  }
 
-    group.querySelectorAll('.chip').forEach((chip) => chip.classList.remove('active'));
-    button.classList.add('active');
+  return {
+    ...defaultConfig,
+    ...parsed
+  };
+}
 
-    if (key === 'color') {
-      selectedColor = button.dataset.color;
-    } else {
-      selectedSize = button.dataset.size;
-    }
+function setupAuthClient() {
+  const isPlaceholder =
+    authConfig.supabaseUrl.includes("YOUR-PROJECT-ID") || authConfig.supabaseAnonKey.includes("YOUR-ANON-KEY");
 
-    syncSelectionUI();
-  });
-};
+  if (isPlaceholder || !window.supabase?.createClient) {
+    setStatus(
+      "Supabase ist noch nicht konfiguriert. Trage URL + ANON KEY in config/supabase.credentials.json ein.",
+      "error"
+    );
+    return;
+  }
 
-handleChipGroup('colorOptions', 'color');
-handleChipGroup('sizeOptions', 'size');
+  supabaseClient = window.supabase.createClient(authConfig.supabaseUrl, authConfig.supabaseAnonKey);
+  setStatus("Supabase verbunden. Du kannst dich jetzt registrieren und anmelden.", "success");
+}
 
-// Multi-step flow logic
-const stepDots = document.querySelectorAll('.step-dot');
-const stepPanels = document.querySelectorAll('.step-panel');
-let currentStep = 1;
+function bindEvents() {
+  loginForm.addEventListener("submit", onLoginSubmit);
+  registerForm.addEventListener("submit", onRegisterSubmit);
+  sendOtpBtn.addEventListener("click", onSendOtp);
+  verifyOtpBtn.addEventListener("click", onVerifyOtp);
+  sendResetBtn.addEventListener("click", onResetPassword);
 
-const goToStep = (stepNumber) => {
-  currentStep = stepNumber;
+  if (window.location.hash.includes("access_token")) {
+    setStatus("Reset-Link erkannt. Du kannst nun ein neues Passwort setzen (späterer Screen).", "success");
+  }
+}
 
-  stepDots.forEach((dot) => {
-    dot.classList.toggle('active', Number(dot.dataset.step) === stepNumber);
-  });
+function setupTabs() {
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const tab = button.dataset.tab;
 
-  stepPanels.forEach((panel) => {
-    panel.classList.toggle('active', Number(panel.dataset.panel) === stepNumber);
-  });
-};
+      tabButtons.forEach((btn) => {
+        const selected = btn === button;
+        btn.classList.toggle("active", selected);
+        btn.setAttribute("aria-selected", String(selected));
+      });
 
-stepDots.forEach((dot) => {
-  dot.addEventListener('click', () => goToStep(Number(dot.dataset.step)));
-});
-
-document.querySelectorAll('.next-step').forEach((button) => {
-  button.addEventListener('click', () => {
-    if (currentStep < 3) {
-      goToStep(currentStep + 1);
-    }
-  });
-});
-
-document.querySelectorAll('.prev-step').forEach((button) => {
-  button.addEventListener('click', () => {
-    if (currentStep > 1) {
-      goToStep(currentStep - 1);
-    }
-  });
-});
-
-document.getElementById('jumpToPurchase')?.addEventListener('click', () => {
-  document.getElementById('addToCart')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-});
-
-// Purchase interactions
-const qtyInput = document.getElementById('qtyInput');
-const qtyMinus = document.getElementById('qtyMinus');
-const qtyPlus = document.getElementById('qtyPlus');
-const addToCart = document.getElementById('addToCart');
-const cartFeedback = document.getElementById('cartFeedback');
-
-const normalizeQty = () => {
-  let qty = Number(qtyInput.value);
-  if (!Number.isFinite(qty) || qty < 1) qty = 1;
-  qtyInput.value = qty;
-  return qty;
-};
-
-qtyPlus?.addEventListener('click', () => {
-  qtyInput.value = normalizeQty() + 1;
-});
-
-qtyMinus?.addEventListener('click', () => {
-  qtyInput.value = Math.max(1, normalizeQty() - 1);
-});
-
-qtyInput?.addEventListener('input', normalizeQty);
-
-addToCart?.addEventListener('click', () => {
-  const qty = normalizeQty();
-  const message = `${qty} × Signature One (${selectedColor}, ${selectedSize}) added to your cart.`;
-  cartFeedback.textContent = message;
-
-  addToCart.classList.add('added');
-  addToCart.textContent = 'Added';
-
-  setTimeout(() => {
-    addToCart.classList.remove('added');
-    addToCart.textContent = 'Add to Cart';
-  }, 1600);
-});
-
-// Scroll reveal animation
-const observer = new IntersectionObserver(
-  (entries) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target);
-      }
+      panels.forEach((panel) => panel.classList.toggle("active", panel.dataset.panel === tab));
     });
-  },
-  { threshold: 0.2 }
-);
+  });
+}
 
-document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+async function onLoginSubmit(event) {
+  event.preventDefault();
+  if (!assertClient()) return;
 
-// Initialize dynamic state
-syncSelectionUI();
-goToStep(1);
+  const data = new FormData(loginForm);
+  const email = String(data.get("email") || "").trim();
+  const password = String(data.get("password") || "");
+
+  setStatus("Login läuft…");
+
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    setStatus(`Login fehlgeschlagen: ${error.message}`, "error");
+    return;
+  }
+
+  setStatus("Login erfolgreich. Weiterleitung zum Dashboard vorbereiten.", "success");
+}
+
+async function onRegisterSubmit(event) {
+  event.preventDefault();
+  if (!assertClient()) return;
+
+  const data = new FormData(registerForm);
+  const email = String(data.get("email") || "").trim();
+  const password = String(data.get("password") || "");
+  const displayName = String(data.get("displayName") || "").trim();
+
+  setStatus("Registrierung läuft…");
+
+  const { error } = await supabaseClient.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { display_name: displayName },
+      emailRedirectTo: authConfig.redirectTo
+    }
+  });
+
+  if (error) {
+    setStatus(`Registrierung fehlgeschlagen: ${error.message}`, "error");
+    return;
+  }
+
+  setStatus("Registrierung gestartet. Prüfe deine E-Mail für die Verifizierung.", "success");
+}
+
+async function onSendOtp() {
+  if (!assertClient()) return;
+
+  const data = new FormData(otpForm);
+  const email = String(data.get("email") || "").trim();
+
+  if (!email) {
+    setStatus("Bitte zuerst eine E-Mail eingeben.", "error");
+    return;
+  }
+
+  setStatus("OTP wird per E-Mail versendet…");
+
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false, emailRedirectTo: authConfig.redirectTo }
+  });
+
+  if (error) {
+    setStatus(`OTP-Versand fehlgeschlagen: ${error.message}`, "error");
+    return;
+  }
+
+  setStatus("OTP gesendet. Bitte E-Mail prüfen und den 6-stelligen Code eingeben.", "success");
+}
+
+async function onVerifyOtp() {
+  if (!assertClient()) return;
+
+  const data = new FormData(otpForm);
+  const email = String(data.get("email") || "").trim();
+  const token = String(data.get("otpCode") || "").trim();
+
+  if (!email || !token) {
+    setStatus("Bitte E-Mail und OTP-Code ausfüllen.", "error");
+    return;
+  }
+
+  setStatus("OTP wird geprüft…");
+
+  const { error } = await supabaseClient.auth.verifyOtp({
+    email,
+    token,
+    type: "email"
+  });
+
+  if (error) {
+    setStatus(`OTP ungültig: ${error.message}`, "error");
+    return;
+  }
+
+  setStatus("OTP korrekt. Du bist jetzt angemeldet.", "success");
+}
+
+async function onResetPassword() {
+  if (!assertClient()) return;
+
+  const data = new FormData(otpForm);
+  const email = String(data.get("email") || "").trim();
+
+  if (!email) {
+    setStatus("Bitte eine E-Mail für den Reset eingeben.", "error");
+    return;
+  }
+
+  setStatus("Passwort-Reset-Link wird gesendet…");
+
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    redirectTo: authConfig.redirectTo
+  });
+
+  if (error) {
+    setStatus(`Reset fehlgeschlagen: ${error.message}`, "error");
+    return;
+  }
+
+  setStatus("Reset-Link gesendet. Bitte Posteingang prüfen.", "success");
+}
+
+function assertClient() {
+  if (supabaseClient) return true;
+  setStatus("Supabase nicht initialisiert. Konfiguriere zuerst die JSON-Datei.", "error");
+  return false;
+}
+
+function setStatus(message, type = "") {
+  statusEl.textContent = message;
+  statusEl.className = "status";
+  if (type) statusEl.classList.add(type);
+}

@@ -1,281 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Aurelius Atelier presents an ultra-premium Swiss luxury watch crafted for timeless distinction."
+      content="Marketing AI Dashboard Login mit Supabase Auth: Registrierung, Login und OTP-Passwort-Reset."
     />
-    <title>Aurelius Atelier — Time, Perfected.</title>
+    <title>Marketing AI Dashboard · Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header class="site-header" id="top">
-      <div class="container header-inner">
-        <a href="#top" class="brand" aria-label="Aurelius Atelier home">Aurelius Atelier</a>
+    <main class="auth-layout">
+      <section class="brand-panel card">
+        <p class="eyebrow">Marketing-AI-Dashboard</p>
+        <h1>Dein AI-Agent für schnelle Marketing-Entscheidungen.</h1>
+        <p class="muted">
+          Analysieren, diskutieren, entscheiden – in einem fokussierten Interface. Melde dich an und starte mit
+          Kampagnen, Creatives und AI-Insights.
+        </p>
 
-        <button class="mobile-toggle" id="mobileToggle" aria-expanded="false" aria-controls="siteNav">
-          <span></span><span></span><span></span>
-          <span class="sr-only">Toggle navigation</span>
-        </button>
-
-        <nav id="siteNav" class="site-nav" aria-label="Main navigation">
-          <a href="#collection">Collection</a>
-          <a href="#craftsmanship">Craftsmanship</a>
-          <a href="#details">Details</a>
-          <a href="#purchase">Purchase</a>
-          <a href="#purchase" class="btn btn-gold">Reserve Piece</a>
-        </nav>
-      </div>
-    </header>
-
-    <main>
-      <section class="hero" id="collection">
-        <div class="hero-backdrop"></div>
-        <div class="container hero-content">
-          <p class="eyebrow">Swiss Heritage · Limited Annual Release</p>
-          <h1>Time, Perfected.</h1>
-          <p class="hero-copy">A statement of precision, elegance, and legacy.</p>
-          <div class="hero-actions">
-            <a href="#details" class="btn btn-gold">Discover the Watch</a>
-            <a href="#purchase" class="btn btn-ghost">Buy Now</a>
-          </div>
-          <div class="scroll-indicator" aria-hidden="true">
-            <span>Scroll</span>
-            <div class="scroll-line"></div>
-          </div>
-        </div>
+        <ul class="feature-list">
+          <li>⚡ Kampagnen-Übersicht mit klaren KPIs</li>
+          <li>🤖 AI-Report + Chat direkt im Workflow</li>
+          <li>🧠 Vorschläge für neue Creatives & nächste Schritte</li>
+        </ul>
       </section>
 
-      <section class="section story" id="craftsmanship">
-        <div class="container split reveal">
-          <div>
-            <p class="eyebrow">For the Few Who Know</p>
-            <h2>Crafted for the discreetly distinguished.</h2>
-          </div>
-          <div class="story-grid">
-            <article>
-              <h3>Collectors of Craft</h3>
-              <p>
-                Designed for those who value movement architecture, hand-finished detail, and a standard where every
-                component exists for enduring performance.
-              </p>
-            </article>
-            <article>
-              <h3>Guardians of Timeless Design</h3>
-              <p>
-                A silhouette that resists trend and rewards taste—balanced proportions, refined dial work, and a profile
-                engineered to remain relevant for decades.
-              </p>
-            </article>
-            <article>
-              <h3>Quiet Status Seekers</h3>
-              <p>
-                Presence without spectacle. This piece communicates authority through restraint, precision, and
-                unmistakable quality.
-              </p>
-            </article>
-            <article>
-              <h3>Long-Term Investors in Quality</h3>
-              <p>
-                Built for generational ownership, with robust internals, premium materials, and service assurance for the
-                long horizon.
-              </p>
-            </article>
-          </div>
+      <section class="auth-panel card" aria-live="polite">
+        <div class="tabs" role="tablist" aria-label="Authentifizierung">
+          <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true">Login</button>
+          <button class="tab-btn" data-tab="register" role="tab" aria-selected="false">Registrieren</button>
+          <button class="tab-btn" data-tab="otp" role="tab" aria-selected="false">OTP / Reset</button>
         </div>
-      </section>
 
-      <section class="section features" id="details">
-        <div class="container">
-          <p class="eyebrow center">Technical Excellence</p>
-          <h2 class="center">A standard set in metal, glass, and movement.</h2>
-          <div class="feature-grid">
-            <article class="feature-card reveal">
-              <span class="icon">✦</span>
-              <h3>Swiss Precision</h3>
-              <p>Chronometer-grade mechanical movement regulated for exceptional daily accuracy.</p>
-            </article>
-            <article class="feature-card reveal">
-              <span class="icon">◇</span>
-              <h3>Sapphire Crystal Glass</h3>
-              <p>Anti-reflective sapphire crystal for high clarity and resilient scratch resistance.</p>
-            </article>
-            <article class="feature-card reveal">
-              <span class="icon">◈</span>
-              <h3>5-Year Warranty</h3>
-              <p>International coverage and atelier-level servicing through authorized care centers.</p>
-            </article>
-            <article class="feature-card reveal">
-              <span class="icon">◉</span>
-              <h3>Water Resistant</h3>
-              <p>Engineered for confidence in everyday environments and elevated travel.</p>
-            </article>
-          </div>
-        </div>
-      </section>
+        <form id="loginForm" class="auth-form active" data-panel="login">
+          <h2>Willkommen zurück</h2>
+          <label>E-Mail
+            <input type="email" name="email" required placeholder="name@firma.ch" />
+          </label>
+          <label>Passwort
+            <input type="password" name="password" required minlength="6" placeholder="••••••••" />
+          </label>
+          <button type="submit">Mit Passwort anmelden</button>
+        </form>
 
-      <section class="section showcase">
-        <div class="container reveal">
-          <div class="showcase-layout">
-            <div class="watch-stage">
-              <img
-                id="watchImage"
-                src="https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=1200&q=80"
-                alt="Aurelius Atelier watch variant"
-              />
-            </div>
-            <div class="watch-options">
-              <p class="eyebrow">Curated Variants</p>
-              <h2>The Aurelius Signature One</h2>
-              <p>Select your finish and fit. Each configuration is assembled to order and finished by master technicians.</p>
+        <form id="registerForm" class="auth-form" data-panel="register">
+          <h2>Neues Konto erstellen</h2>
+          <label>Anzeigename
+            <input type="text" name="displayName" required minlength="2" placeholder="Max Muster" />
+          </label>
+          <label>E-Mail
+            <input type="email" name="email" required placeholder="name@firma.ch" />
+          </label>
+          <label>Passwort
+            <input type="password" name="password" required minlength="6" placeholder="Mindestens 6 Zeichen" />
+          </label>
+          <button type="submit">Konto registrieren</button>
+        </form>
 
-              <div class="option-group" role="radiogroup" aria-label="Color variants">
-                <p>Finish</p>
-                <div class="chips" id="colorOptions">
-                  <button class="chip active" data-color="Midnight Black" type="button">Midnight Black</button>
-                  <button class="chip" data-color="Champagne Gold" type="button">Champagne Gold</button>
-                  <button class="chip" data-color="Silver Steel" type="button">Silver Steel</button>
-                </div>
-              </div>
+        <form id="otpForm" class="auth-form" data-panel="otp">
+          <h2>Passwort vergessen / OTP Login</h2>
+          <label>E-Mail
+            <input type="email" name="email" required placeholder="name@firma.ch" />
+          </label>
+          <button type="button" id="sendOtpBtn" class="ghost">OTP-Code senden</button>
 
-              <div class="option-group" role="radiogroup" aria-label="Size variants">
-                <p>Size</p>
-                <div class="chips" id="sizeOptions">
-                  <button class="chip active" data-size="40 mm" type="button">40 mm</button>
-                  <button class="chip" data-size="42 mm" type="button">42 mm</button>
-                </div>
-              </div>
+          <label>OTP-Code (6-stellig)
+            <input type="text" name="otpCode" inputmode="numeric" pattern="[0-9]{6}" placeholder="123456" />
+          </label>
+          <button type="button" id="verifyOtpBtn">Mit OTP einloggen</button>
 
-              <p class="selection-note" id="selectionNote">Selected: Midnight Black · 40 mm</p>
-            </div>
-          </div>
-        </div>
-      </section>
+          <div class="divider"></div>
 
-      <section class="section purchase-flow" id="purchase">
-        <div class="container reveal">
-          <p class="eyebrow center">Private Purchase Journey</p>
-          <h2 class="center">From discovery to ownership.</h2>
+          <button type="button" id="sendResetBtn" class="ghost">Passwort-Reset-Link senden</button>
+        </form>
 
-          <div class="steps-nav" id="stepsNav">
-            <button class="step-dot active" data-step="1" type="button">1</button>
-            <button class="step-dot" data-step="2" type="button">2</button>
-            <button class="step-dot" data-step="3" type="button">3</button>
-          </div>
-
-          <div class="step-panels">
-            <article class="step-panel active" data-panel="1">
-              <h3>Step 1 — Discover the watch</h3>
-              <p>
-                Explore the Signature One and its defining details. Learn what sets its movement, balance, and finish
-                apart from ordinary timepieces.
-              </p>
-              <button type="button" class="btn btn-gold next-step">Continue</button>
-            </article>
-
-            <article class="step-panel" data-panel="2">
-              <h3>Step 2 — Choose finish and size</h3>
-              <p>
-                Finalize your preferred expression in metal and fit. Your selected configuration is prepared for atelier
-                assembly.
-              </p>
-              <div class="inline-actions">
-                <button type="button" class="btn btn-ghost prev-step">Back</button>
-                <button type="button" class="btn btn-gold next-step">Continue</button>
-              </div>
-            </article>
-
-            <article class="step-panel" data-panel="3">
-              <h3>Step 3 — Add to cart</h3>
-              <p>Secure your piece and complete checkout with insured global shipping and concierge support.</p>
-              <button type="button" class="btn btn-gold" id="jumpToPurchase">Proceed to Purchase</button>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section product-buy">
-        <div class="container buy-card reveal">
-          <div>
-            <p class="eyebrow">Aurelius Atelier</p>
-            <h2 id="productName">Signature One — Midnight Black / 40 mm</h2>
-            <p>
-              A meticulously engineered Swiss automatic created for private collectors who prioritize enduring design and
-              uncompromising quality.
-            </p>
-          </div>
-          <div class="purchase-box">
-            <p class="price" id="productPrice">$12,800</p>
-            <label class="quantity">
-              Quantity
-              <div>
-                <button type="button" id="qtyMinus" aria-label="Decrease quantity">−</button>
-                <input id="qtyInput" type="number" min="1" value="1" />
-                <button type="button" id="qtyPlus" aria-label="Increase quantity">+</button>
-              </div>
-            </label>
-            <div class="buy-actions">
-              <button type="button" class="btn btn-gold" id="addToCart">Add to Cart</button>
-              <button type="button" class="btn btn-ghost">Buy Now</button>
-            </div>
-            <p class="cart-feedback" id="cartFeedback" aria-live="polite"></p>
-          </div>
-        </div>
-      </section>
-
-      <section class="section trust">
-        <div class="container trust-grid reveal">
-          <article>Swiss Made</article>
-          <article>Free Worldwide Shipping</article>
-          <article>5-Year International Warranty</article>
-          <article>Secure Checkout</article>
-        </div>
-      </section>
-
-      <section class="section testimonials">
-        <div class="container">
-          <p class="eyebrow center">Client Impressions</p>
-          <h2 class="center">Chosen by those who collect with intention.</h2>
-          <div class="testimonial-grid">
-            <blockquote class="reveal">
-              “Understated, exacting, and deeply refined. It wears like a legacy piece from day one.”
-              <cite>— Marcus L., Private Collector</cite>
-            </blockquote>
-            <blockquote class="reveal">
-              “The finishing is extraordinary up close. Quiet confidence in every detail.”
-              <cite>— Helena R., Design Director</cite>
-            </blockquote>
-            <blockquote class="reveal">
-              “A rare balance of technical rigor and timeless elegance. Worth every moment.”
-              <cite>— David K., Entrepreneur</cite>
-            </blockquote>
-          </div>
-        </div>
+        <p class="notice">
+          Hinweis: Lege zuerst config/supabase.credentials.json an und setze in Supabase Email-Templates + Redirect-URL korrekt.
+        </p>
+        <p id="status" class="status">Bereit.</p>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="container footer-inner">
-        <p class="brand">Aurelius Atelier</p>
-        <nav aria-label="Footer navigation">
-          <a href="#collection">Collection</a>
-          <a href="#craftsmanship">Craftsmanship</a>
-          <a href="#details">Details</a>
-          <a href="#purchase">Purchase</a>
-        </nav>
-        <p class="socials">Instagram · YouTube · LinkedIn</p>
-        <p class="copyright">© 2026 Aurelius Atelier. All rights reserved.</p>
-      </div>
-    </footer>
-
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
   </body>
 </html>
