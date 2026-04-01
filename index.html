@@ -3,15 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Superface Minimal Setup</title>
+    <title>Supabase Chat</title>
     <link rel="stylesheet" href="style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
-    <main class="container">
-      <h1>Superface Minimal Setup</h1>
-      <p>Nur ein minimales HTML/CSS/JavaScript-Projekt.</p>
-      <p>Lege deine Zugangsdaten in <code>superface.credentials.json</code> ab.</p>
+    <header class="topbar">
+      <h1>Supabase Chat</h1>
+      <button id="openChatBtn" class="chat-launch" disabled>Chat</button>
+    </header>
+
+    <main class="auth-shell">
+      <section class="card">
+        <h2>Login / Registrierung</h2>
+
+        <div class="auth-tabs">
+          <button class="tab active" data-tab="login">Login</button>
+          <button class="tab" data-tab="register">Registrieren</button>
+          <button class="tab" data-tab="otp">OTP per E-Mail</button>
+        </div>
+
+        <div class="panel active" id="loginPanel">
+          <input id="loginEmail" type="email" placeholder="E-Mail" />
+          <input id="loginPassword" type="password" placeholder="Passwort" />
+          <button id="loginBtn">Einloggen</button>
+        </div>
+
+        <div class="panel" id="registerPanel">
+          <input id="registerEmail" type="email" placeholder="E-Mail" />
+          <input id="registerPassword" type="password" placeholder="Passwort" />
+          <button id="registerBtn">Registrieren</button>
+        </div>
+
+        <div class="panel" id="otpPanel">
+          <input id="otpEmail" type="email" placeholder="E-Mail" />
+          <button id="sendOtpBtn">OTP senden</button>
+          <input id="otpCode" type="text" placeholder="Code aus E-Mail" />
+          <button id="verifyOtpBtn">Mit OTP einloggen</button>
+        </div>
+
+        <div class="session-row">
+          <span id="sessionInfo">Nicht eingeloggt</span>
+          <button id="logoutBtn" class="ghost" disabled>Logout</button>
+        </div>
+      </section>
     </main>
+
+    <section id="chatModal" class="chat-modal hidden">
+      <div class="chat-window">
+        <div class="chat-header">
+          <h3>Chat</h3>
+          <button id="closeChatBtn" class="ghost">Schließen</button>
+        </div>
+
+        <div id="chatMessages" class="chat-messages"></div>
+
+        <form id="chatForm" class="chat-input-row">
+          <input id="chatInput" type="text" placeholder="Nachricht schreiben ..." autocomplete="off" required />
+          <button type="submit">Senden</button>
+        </form>
+      </div>
+    </section>
+
     <script src="script.js"></script>
   </body>
 </html>
