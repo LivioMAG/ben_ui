@@ -148,8 +148,8 @@ Nicht Teil des MVP:
 Enthalten ist ein moderner Auth-Screen mit:
 - Login mit E-Mail + Passwort
 - Registrierung mit E-Mail + Passwort
-- OTP-Login per E-Mail
-- Passwort-Reset-Link per E-Mail
+- Passwort vergessen (Reset-Link per E-Mail)
+- Passwort direkt neu setzen nach Recovery-Link
 
 ### Supabase-Credentials via JSON
 Lege eine Datei `config/supabase.credentials.json` an (nicht committen) auf Basis von:
@@ -160,7 +160,7 @@ Beispiel:
 {
   "supabaseUrl": "https://YOUR-PROJECT-ID.supabase.co",
   "supabaseAnonKey": "YOUR-ANON-KEY",
-  "redirectTo": "http://127.0.0.1:5500"
+  "redirectTo": "https://deine-domain.tld/index.html"
 }
 ```
 
