@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Marketing AI Dashboard Login mit Supabase Auth: Registrierung, Login und OTP-Passwort-Reset."
+      content="NebulaRTC Auth: Supabase Login, Registrierung und OTP-Code für Passwort vergessen."
     />
-    <title>Marketing AI Dashboard · Login</title>
+    <title>NebulaRTC · Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -19,17 +19,16 @@
   <body>
     <main class="auth-layout">
       <section class="brand-panel card">
-        <p class="eyebrow">Marketing-AI-Dashboard</p>
-        <h1>Dein AI-Agent für schnelle Marketing-Entscheidungen.</h1>
+        <p class="eyebrow">NebulaRTC Platform</p>
+        <h1>Futuristische WebRTC-Plattform für Desktop Collaboration.</h1>
         <p class="muted">
-          Analysieren, diskutieren, entscheiden – in einem fokussierten Interface. Melde dich an und starte mit
-          Kampagnen, Creatives und AI-Insights.
+          Minimalistisch, hell und fokussiert: sichere Anmeldung, Team-Räume und ultra-klare Call-Übersicht für die PC-Ansicht.
         </p>
 
         <ul class="feature-list">
-          <li>⚡ Kampagnen-Übersicht mit klaren KPIs</li>
-          <li>🤖 AI-Report + Chat direkt im Workflow</li>
-          <li>🧠 Vorschläge für neue Creatives & nächste Schritte</li>
+          <li>⚡ E-Mail + Passwort Login mit Supabase</li>
+          <li>🔐 Registrierung und Passwort vergessen via OTP-Code</li>
+          <li>🛰️ Main-Screen optimiert für WebRTC-Räume</li>
         </ul>
       </section>
 
@@ -66,28 +65,30 @@
         </form>
 
         <form id="resetForm" class="auth-form" data-panel="reset">
-          <h2>Passwort vergessen</h2>
+          <h2>Passwort vergessen (OTP)</h2>
           <label>E-Mail
             <input type="email" name="email" required placeholder="name@firma.ch" />
           </label>
-          <button type="button" id="sendResetBtn" class="ghost">Reset-Link senden</button>
+          <button type="button" id="sendOtpBtn" class="ghost">OTP-Code senden</button>
 
           <div class="divider"></div>
 
-          <label>Neues Passwort
+          <label>OTP-Code
             <input
-              type="password"
-              name="newPassword"
+              type="text"
+              name="otpCode"
+              inputmode="numeric"
               minlength="6"
-              placeholder="Mindestens 6 Zeichen"
-              autocomplete="new-password"
+              maxlength="6"
+              placeholder="123456"
+              autocomplete="one-time-code"
             />
           </label>
-          <button type="button" id="updatePasswordBtn">Neues Passwort speichern</button>
+          <button type="button" id="verifyOtpBtn">Code verifizieren & einloggen</button>
         </form>
 
         <p class="notice">
-          Hinweis: Lege zuerst config/supabase.credentials.json an und setze in Supabase Email-Templates + Redirect-URL korrekt.
+          Supabase-Credentials werden aus <code>config/supabase.credentials.json</code> geladen (URL + ANON Public Key).
         </p>
         <p id="status" class="status">Bereit.</p>
       </section>

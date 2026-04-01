@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Kampagnenübersicht für das Marketing AI Dashboard." />
-    <title>Marketing AI Dashboard · Kampagnen</title>
+    <meta name="description" content="NebulaRTC Main-Screen für WebRTC-Räume, Sessions und Signaling-Status." />
+    <title>NebulaRTC · Main Screen</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -17,71 +17,64 @@
     <main class="dashboard">
       <header class="topbar card">
         <div>
-          <p class="eyebrow">Marketing-AI-Dashboard</p>
-          <h1>Kampagnenübersicht</h1>
+          <p class="eyebrow">NebulaRTC Platform</p>
+          <h1>Main Screen · WebRTC Control</h1>
+          <p id="userInfo" class="subline">Lade Benutzer…</p>
         </div>
         <div class="header-actions">
-          <button id="settingsBtn" class="ghost" type="button">Einstellungen</button>
+          <button id="refreshBtn" class="ghost" type="button">Refresh</button>
           <button id="logoutBtn" type="button">Logout</button>
         </div>
       </header>
 
+      <section class="stats-grid">
+        <article class="card stat-card"><p>Aktive Räume</p><h2 id="statRooms">0</h2></article>
+        <article class="card stat-card"><p>Online Teilnehmer</p><h2 id="statParticipants">0</h2></article>
+        <article class="card stat-card"><p>Signaling Events (24h)</p><h2 id="statSignals">0</h2></article>
+        <article class="card stat-card"><p>Eigene Sessions</p><h2 id="statSessions">0</h2></article>
+      </section>
+
       <section class="card create-section">
-        <h2>Neue Kampagne anlegen</h2>
-        <form id="campaignForm" class="campaign-form">
+        <h2>Neuen WebRTC-Raum anlegen</h2>
+        <form id="roomForm" class="campaign-form">
           <label>
-            Kampagnenname
-            <input id="campaignName" name="campaignName" type="text" required minlength="2" placeholder="Frühlingsaktion 2026" />
+            Raumname
+            <input id="roomName" name="roomName" type="text" required minlength="2" placeholder="Design-Review" />
           </label>
 
           <label>
-            Plattform
-            <select id="platform" name="platform" required>
-              <option value="instagram">Instagram</option>
-              <option value="facebook" disabled>Facebook (bald verfügbar)</option>
-              <option value="tiktok" disabled>TikTok (bald verfügbar)</option>
+            Modus
+            <select id="roomMode" name="roomMode" required>
+              <option value="mesh">Mesh</option>
+              <option value="sfu">SFU</option>
             </select>
           </label>
 
           <label>
-            Währung
-            <input type="text" value="CHF" readonly />
+            Maximale Teilnehmer
+            <input id="maxParticipants" name="maxParticipants" type="number" min="2" max="50" value="8" required />
           </label>
 
-          <label>
-            Zeitzone
-            <input type="text" value="Europe/Zurich" readonly />
-          </label>
-
-          <label>
-            Status
-            <input type="text" value="aktiv" readonly />
-          </label>
-
-          <button type="submit">Kampagne erstellen</button>
+          <button type="submit">Raum erstellen</button>
         </form>
         <p id="status" class="status">Bereit.</p>
       </section>
 
       <section class="card">
-        <h2>Deine Kampagnen</h2>
+        <h2>Räume</h2>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Plattform</th>
-                <th>Währung</th>
-                <th>Zeitzone</th>
+                <th>Modus</th>
+                <th>Max</th>
                 <th>Status</th>
-                <th>Zuletzt synchronisiert</th>
                 <th>Erstellt am</th>
               </tr>
             </thead>
-            <tbody id="campaignTableBody">
-              <tr>
-                <td colspan="7">Noch keine Kampagnen vorhanden.</td>
-              </tr>
+            <tbody id="roomTableBody">
+              <tr><td colspan="5">Noch keine Räume vorhanden.</td></tr>
             </tbody>
           </table>
         </div>

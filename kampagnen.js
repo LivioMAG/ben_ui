@@ -2,10 +2,16 @@ const CONFIG_PATH = "./config/supabase.credentials.json";
 const CONFIG_EXAMPLE_PATH = "./config/supabase.credentials.example.json";
 
 const statusEl = document.getElementById("status");
-const form = document.getElementById("campaignForm");
-const tableBody = document.getElementById("campaignTableBody");
+const form = document.getElementById("roomForm");
+const tableBody = document.getElementById("roomTableBody");
 const logoutBtn = document.getElementById("logoutBtn");
-const settingsBtn = document.getElementById("settingsBtn");
+const refreshBtn = document.getElementById("refreshBtn");
+const userInfo = document.getElementById("userInfo");
+
+const statRooms = document.getElementById("statRooms");
+const statParticipants = document.getElementById("statParticipants");
+const statSignals = document.getElementById("statSignals");
+const statSessions = document.getElementById("statSessions");
 
 let supabaseClient = null;
 let sessionUser = null;
@@ -29,92 +35,118 @@ async function init() {
   }
 
   sessionUser = data.session.user;
+  userInfo.textContent = `${sessionUser.email} · Desktop WebRTC Workspace`;
 
   bindEvents();
-  await loadCampaigns();
+  await loadDashboardData();
 }
 
 function bindEvents() {
-  form.addEventListener("submit", onCreateCampaign);
+  form.addEventListener("submit", onCreateRoom);
   logoutBtn.addEventListener("click", onLogout);
-  settingsBtn.addEventListener("click", () => setStatus("Einstellungen folgen im nächsten Schritt.", "success"));
+  refreshBtn.addEventListener("click", () => void loadDashboardData());
 }
 
-async function onCreateCampaign(event) {
+async function onCreateRoom(event) {
   event.preventDefault();
 
   const data = new FormData(form);
-  const name = String(data.get("campaignName") || "").trim();
-  const platform = String(data.get("platform") || "instagram").trim();
+  const name = String(data.get("roomName") || "").trim();
+  const mode = String(data.get("roomMode") || "mesh").trim();
+  const maxParticipants = Number(data.get("maxParticipants") || 8);
 
   if (!name) {
-    setStatus("Bitte gib einen Kampagnennamen ein.", "error");
+    setStatus("Bitte gib einen Raumnamen ein.", "error");
     return;
   }
 
   const payload = {
-    benutzer_id: sessionUser.id,
-    name,
-    plattform: platform,
-    waehrung: "CHF",
-    zeitzone: "Europe/Zurich",
-    status: "aktiv"
+    owner_id: sessionUser.id,
+    room_name: name,
+    room_mode: mode,
+    max_participants: maxParticipants,
+    room_status: "active"
   };
 
-  const { error } = await supabaseClient.from("kampagnen").insert(payload);
+  const { error } = await supabaseClient.from("rtc_rooms").insert(payload);
 
   if (error) {
-    setStatus(`Kampagne konnte nicht erstellt werden: ${error.message}`, "error");
+    setStatus(`Raum konnte nicht erstellt werden: ${error.message}`, "error");
     return;
   }
 
   form.reset();
-  document.getElementById("platform").value = "instagram";
-  setStatus("Kampagne erfolgreich erstellt.", "success");
-  await loadCampaigns();
+  document.getElementById("roomMode").value = "mesh";
+  document.getElementById("maxParticipants").value = "8";
+  setStatus("Raum erfolgreich erstellt.", "success");
+  await loadDashboardData();
 }
 
-async function loadCampaigns() {
+async function loadDashboardData() {
+  await Promise.all([loadRooms(), loadStats()]);
+}
+
+async function loadRooms() {
   const { data, error } = await supabaseClient
-    .from("kampagnen")
-    .select("id,name,plattform,waehrung,zeitzone,status,zuletzt_synchronisiert,erstellt_am")
-    .eq("benutzer_id", sessionUser.id)
-    .order("erstellt_am", { ascending: false });
+    .from("rtc_rooms")
+    .select("id,room_name,room_mode,max_participants,room_status,created_at")
+    .eq("owner_id", sessionUser.id)
+    .order("created_at", { ascending: false });
 
   if (error) {
-    setStatus(`Kampagnen konnten nicht geladen werden: ${error.message}`, "error");
+    setStatus(`Räume konnten nicht geladen werden: ${error.message}`, "error");
     return;
   }
 
-  renderCampaigns(data || []);
+  renderRooms(data || []);
 }
 
-function renderCampaigns(campaigns) {
-  if (!campaigns.length) {
-    tableBody.innerHTML = '<tr><td colspan="7">Noch keine Kampagnen vorhanden.</td></tr>';
+async function loadStats() {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const [roomsRes, participantsRes, signalsRes, sessionsRes] = await Promise.all([
+    supabaseClient.from("rtc_rooms").select("id", { count: "exact", head: true }).eq("owner_id", sessionUser.id),
+    supabaseClient
+      .from("rtc_room_participants")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", sessionUser.id)
+      .eq("is_online", true),
+    supabaseClient
+      .from("rtc_signaling_events")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", sessionUser.id)
+      .gte("created_at", since),
+    supabaseClient
+      .from("rtc_peer_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", sessionUser.id)
+      .eq("session_state", "connected")
+  ]);
+
+  statRooms.textContent = String(roomsRes.count || 0);
+  statParticipants.textContent = String(participantsRes.count || 0);
+  statSignals.textContent = String(signalsRes.count || 0);
+  statSessions.textContent = String(sessionsRes.count || 0);
+}
+
+function renderRooms(rooms) {
+  if (!rooms.length) {
+    tableBody.innerHTML = '<tr><td colspan="5">Noch keine Räume vorhanden.</td></tr>';
     return;
   }
 
-  tableBody.innerHTML = campaigns
+  tableBody.innerHTML = rooms
     .map(
-      (campaign) => `
-      <tr data-id="${campaign.id}">
-        <td>${escapeHtml(campaign.name)}</td>
-        <td>${formatPlatform(campaign.plattform)}</td>
-        <td>${escapeHtml(campaign.waehrung)}</td>
-        <td>${escapeHtml(campaign.zeitzone)}</td>
-        <td>${escapeHtml(campaign.status)}</td>
-        <td>${formatDate(campaign.zuletzt_synchronisiert)}</td>
-        <td>${formatDate(campaign.erstellt_am)}</td>
+      (room) => `
+      <tr>
+        <td>${escapeHtml(room.room_name)}</td>
+        <td>${escapeHtml(room.room_mode.toUpperCase())}</td>
+        <td>${room.max_participants}</td>
+        <td>${escapeHtml(room.room_status)}</td>
+        <td>${formatDate(room.created_at)}</td>
       </tr>`
     )
     .join("");
-
-  tableBody.querySelectorAll("tr[data-id]").forEach((row) => {
-    row.addEventListener("click", () => {
-      window.location.assign(`./kampagne-detail.html?id=${row.dataset.id}`);
-    });
-  });
 }
 
 async function onLogout() {
@@ -158,11 +190,6 @@ function formatDate(value) {
     timeStyle: "short",
     timeZone: "Europe/Zurich"
   }).format(date);
-}
-
-function formatPlatform(value) {
-  const mapping = { instagram: "Instagram", facebook: "Facebook", tiktok: "TikTok" };
-  return mapping[value] || value;
 }
 
 function escapeHtml(value) {

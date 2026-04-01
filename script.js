@@ -1,5 +1,6 @@
 const CONFIG_PATH = "./config/supabase.credentials.json";
 const CONFIG_EXAMPLE_PATH = "./config/supabase.credentials.example.json";
+const DASHBOARD_PATH = "./kampagnen.html";
 
 const statusEl = document.getElementById("status");
 const tabButtons = document.querySelectorAll(".tab-btn");
@@ -8,9 +9,8 @@ const panels = document.querySelectorAll(".auth-form");
 const loginForm = document.getElementById("loginForm");
 const registerForm = document.getElementById("registerForm");
 const resetForm = document.getElementById("resetForm");
-const sendResetBtn = document.getElementById("sendResetBtn");
-const updatePasswordBtn = document.getElementById("updatePasswordBtn");
-const DASHBOARD_PATH = "./kampagnen.html";
+const sendOtpBtn = document.getElementById("sendOtpBtn");
+const verifyOtpBtn = document.getElementById("verifyOtpBtn");
 
 let supabaseClient = null;
 let authConfig = null;
@@ -36,10 +36,7 @@ async function loadConfig() {
   if (!response || !response.ok) {
     const fallbackResponse = await fetch(CONFIG_EXAMPLE_PATH).catch(() => null);
     if (!fallbackResponse || !fallbackResponse.ok) {
-      setStatus(
-        `Config fehlt: ${CONFIG_PATH}. Bitte ${CONFIG_EXAMPLE_PATH} kopieren und ausfüllen.`,
-        "error"
-      );
+      setStatus(`Config fehlt: ${CONFIG_PATH}. Bitte ${CONFIG_EXAMPLE_PATH} kopieren und ausfüllen.`, "error");
       return defaultConfig;
     }
 
@@ -49,14 +46,8 @@ async function loadConfig() {
       return defaultConfig;
     }
 
-    setStatus(
-      `Hinweis: ${CONFIG_PATH} nicht gefunden. Nutze ${CONFIG_EXAMPLE_PATH} als Fallback.`,
-      "success"
-    );
-    return {
-      ...defaultConfig,
-      ...fallbackParsed
-    };
+    setStatus(`Hinweis: ${CONFIG_PATH} nicht gefunden. Nutze ${CONFIG_EXAMPLE_PATH} als Fallback.`, "success");
+    return { ...defaultConfig, ...fallbackParsed };
   }
 
   const parsed = await response.json().catch(() => null);
@@ -65,10 +56,7 @@ async function loadConfig() {
     return defaultConfig;
   }
 
-  return {
-    ...defaultConfig,
-    ...parsed
-  };
+  return { ...defaultConfig, ...parsed };
 }
 
 function setupAuthClient() {
@@ -90,12 +78,8 @@ function setupAuthClient() {
 function bindEvents() {
   loginForm.addEventListener("submit", onLoginSubmit);
   registerForm.addEventListener("submit", onRegisterSubmit);
-  sendResetBtn.addEventListener("click", onResetPassword);
-  updatePasswordBtn.addEventListener("click", onUpdatePassword);
-
-  if (hasRecoveryTokens()) {
-    setStatus("Reset-Link erkannt. Bitte unten dein neues Passwort setzen.", "success");
-  }
+  sendOtpBtn.addEventListener("click", onSendOtp);
+  verifyOtpBtn.addEventListener("click", onVerifyOtp);
 }
 
 function setupTabs() {
@@ -131,7 +115,7 @@ async function onLoginSubmit(event) {
     return;
   }
 
-  setStatus("Login erfolgreich. Weiterleitung zur Kampagnenübersicht…", "success");
+  setStatus("Login erfolgreich. Weiterleitung zum Main-Screen…", "success");
   window.location.assign(DASHBOARD_PATH);
 }
 
@@ -163,58 +147,62 @@ async function onRegisterSubmit(event) {
   setStatus("Registrierung gestartet. Prüfe deine E-Mail für die Verifizierung.", "success");
 }
 
-async function onResetPassword() {
+async function onSendOtp() {
   if (!assertClient()) return;
 
   const data = new FormData(resetForm);
   const email = String(data.get("email") || "").trim();
 
   if (!email) {
-    setStatus("Bitte eine E-Mail für den Reset eingeben.", "error");
+    setStatus("Bitte eine E-Mail eingeben.", "error");
     return;
   }
 
-  setStatus("Passwort-Reset-Link wird gesendet…");
+  setStatus("OTP-Code wird gesendet…");
 
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: authConfig.redirectTo
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: authConfig.redirectTo
+    }
   });
 
   if (error) {
-    setStatus(`Reset fehlgeschlagen: ${error.message}`, "error");
+    setStatus(`OTP-Versand fehlgeschlagen: ${error.message}`, "error");
     return;
   }
 
-  setStatus("Reset-Link gesendet. Bitte Posteingang prüfen.", "success");
+  setStatus("OTP-Code gesendet. Bitte E-Mail prüfen und Code eingeben.", "success");
 }
 
-async function onUpdatePassword() {
+async function onVerifyOtp() {
   if (!assertClient()) return;
-  if (!hasRecoveryTokens()) {
-    setStatus("Kein Reset-Token erkannt. Öffne zuerst den Link aus deiner E-Mail.", "error");
-    return;
-  }
 
   const data = new FormData(resetForm);
-  const password = String(data.get("newPassword") || "").trim();
-  if (password.length < 6) {
-    setStatus("Das neue Passwort muss mindestens 6 Zeichen haben.", "error");
+  const email = String(data.get("email") || "").trim();
+  const token = String(data.get("otpCode") || "").trim();
+
+  if (!email || token.length < 6) {
+    setStatus("Bitte E-Mail und 6-stelligen OTP-Code eingeben.", "error");
     return;
   }
 
-  setStatus("Passwort wird aktualisiert…");
-  const { error } = await supabaseClient.auth.updateUser({ password });
+  setStatus("OTP-Code wird verifiziert…");
+
+  const { error } = await supabaseClient.auth.verifyOtp({
+    email,
+    token,
+    type: "email"
+  });
+
   if (error) {
-    setStatus(`Passwort konnte nicht gesetzt werden: ${error.message}`, "error");
+    setStatus(`OTP-Verifizierung fehlgeschlagen: ${error.message}`, "error");
     return;
   }
 
-  window.history.replaceState({}, document.title, window.location.pathname);
-  setStatus("Passwort erfolgreich geändert. Du kannst dich jetzt einloggen.", "success");
-}
-
-function hasRecoveryTokens() {
-  return window.location.hash.includes("access_token") || window.location.hash.includes("type=recovery");
+  setStatus("Code bestätigt. Du wirst jetzt eingeloggt.", "success");
+  window.location.assign(DASHBOARD_PATH);
 }
 
 function assertClient() {
@@ -224,7 +212,7 @@ function assertClient() {
 }
 
 async function redirectIfAlreadyLoggedIn() {
-  if (!supabaseClient || hasRecoveryTokens()) return;
+  if (!supabaseClient) return;
   const { data, error } = await supabaseClient.auth.getSession();
   if (error || !data.session) return;
   window.location.assign(DASHBOARD_PATH);
