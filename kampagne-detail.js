@@ -62,7 +62,7 @@ async function init() {
 
   await Promise.all([
     loadCampaign(),
-    loadReportStatus(),
+    loadReport(),
     loadAudiences(),
     ensureThreadAndLoadMessages()
   ]);
@@ -108,10 +108,10 @@ async function loadCampaign() {
   systemStatusEl.value = data.status || "–";
 }
 
-async function loadReportStatus() {
+async function loadReport() {
   const { data, error } = await supabaseClient
     .from("berichte")
-    .select("status")
+    .select("titel,zusammenfassung,status,erstellt_am")
     .eq("kampagnen_id", campaignId)
     .eq("benutzer_id", sessionUser.id)
     .order("erstellt_am", { ascending: false })
@@ -119,10 +119,13 @@ async function loadReportStatus() {
 
   if (error) {
     reportStatusEl.value = "Fehler";
+    reportMessagesEl.innerHTML = '<p class="status">Bericht konnte nicht geladen werden.</p>';
     return;
   }
 
-  reportStatusEl.value = data?.[0]?.status || "Kein Bericht";
+  const latestReport = data?.[0] || null;
+  reportStatusEl.value = latestReport?.status || "Kein Bericht";
+  renderReport(latestReport);
 }
 
 async function ensureThreadAndLoadMessages() {
@@ -200,7 +203,7 @@ function renderMessages(messages) {
   const chatHtml = freshMessages
     .map((msg) => {
       renderedMessageIds.add(msg.id);
-      const role = msg.rolle === "benutzer" ? "Du" : msg.rolle === "ki" ? "Bot" : "System";
+      const role = msg.rolle === "benutzer" ? "Du" : msg.rolle === "ki" ? "Jemmy" : "System";
       return `
       <article class="chat-message role-${escapeHtml(msg.rolle)}">
         <header>${role} · ${formatDate(msg.erstellt_am)}</header>
@@ -218,24 +221,12 @@ function renderMessages(messages) {
   }
 
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-  renderReportMessages();
 
   if (hasExternalResponse) {
     pollingEnabled = false;
     if (pollHandle) window.clearInterval(pollHandle);
     setStatus("KI-Antwort erhalten. Automatisches Nachladen wurde gestoppt.", "success");
   }
-}
-
-function renderReportMessages() {
-  const reportMessages = [...chatMessagesEl.querySelectorAll(".chat-message.role-ki, .chat-message.role-system")];
-  if (!reportMessages.length) {
-    reportMessagesEl.innerHTML = '<p class="status">Noch keine KI-Antwort vorhanden.</p>';
-    return;
-  }
-
-  reportMessagesEl.innerHTML = reportMessages.map((messageEl) => messageEl.outerHTML).join("");
-  reportMessagesEl.scrollTop = reportMessagesEl.scrollHeight;
 }
 
 async function onSendMessage(event) {
@@ -296,14 +287,33 @@ async function onResetThread() {
   }
 
   chatMessagesEl.innerHTML = '<p class="status">Noch keine Nachrichten vorhanden.</p>';
-  reportMessagesEl.innerHTML = '<p class="status">Noch keine KI-Antwort vorhanden.</p>';
+  reportMessagesEl.innerHTML = '<p class="status">Noch kein Bericht vorhanden.</p>';
   renderedMessageIds.clear();
   lastMessageAt = null;
   threadId = null;
   pollingEnabled = true;
   startPolling();
   await ensureThreadAndLoadMessages();
+  await loadReport();
   setStatus("Thread wurde gelöscht und neu gestartet.", "success");
+}
+
+function renderReport(report) {
+  if (!report) {
+    reportMessagesEl.innerHTML = `
+      <article class="report-entry">
+        <h3>Das ist ein Bericht, welcher die KI vorschlägt.</h3>
+        <p>Aktuell sind in <strong>Berichte</strong> noch keine Daten vorhanden.</p>
+      </article>`;
+    return;
+  }
+
+  reportMessagesEl.innerHTML = `
+    <article class="report-entry">
+      <p class="report-meta">${formatDate(report.erstellt_am)} · Status: ${escapeHtml(report.status || "neu")}</p>
+      <h3>${escapeHtml(report.titel || "Untitled Bericht")}</h3>
+      <p>${escapeHtml(report.zusammenfassung || "Keine Zusammenfassung vorhanden.")}</p>
+    </article>`;
 }
 
 async function triggerWebhook(message) {
