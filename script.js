@@ -382,11 +382,12 @@ async function triggerWebhook(latestMessage = '') {
   try {
     const response = await fetch(webhookUrl, {
       method: 'POST',
+      mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
+    if (response.type !== 'opaque' && !response.ok) {
       console.error('Webhook call failed with non-2xx response.', response.status, response.statusText);
     }
   } catch (error) {
@@ -487,6 +488,7 @@ async function openChat(type = 0) {
     state.chatOpenType = Number.isFinite(Number(type)) ? Number(type) : 0;
     ui.chatMessages.innerHTML = '';
     await createFreshThread();
+    await triggerWebhook();
     ui.chatModal.classList.remove('hidden');
   } catch (error) {
     alert(`Chat konnte nicht geöffnet werden: ${error.message}`);
