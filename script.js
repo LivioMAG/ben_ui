@@ -12,8 +12,6 @@ const CHANNEL_LABELS = {
 const state = {
   supabase: null,
   session: null,
-  webhookUrl: '',
-  chatOpenType: 0,
   currentThreadId: null,
   pollTimer: null,
   shownAssistantMessageIds: new Set(),
@@ -120,7 +118,6 @@ async function loadConfig() {
 async function initSupabase() {
   const config = await loadConfig();
   state.supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
-  state.webhookUrl = config.webhookUrl || '';
 
   const { data } = await state.supabase.auth.getSession();
   state.session = data.session;
@@ -362,39 +359,6 @@ async function verifyOtp() {
   }
 }
 
-async function triggerWebhook(latestMessage = '') {
-  const profileId = state.session?.user?.id;
-  const threadId = state.currentThreadId;
-  const webhookUrl = state.webhookUrl?.trim();
-
-  if (!webhookUrl || !profileId || !threadId) {
-    return;
-  }
-
-  const payload = {
-    profile_id: profileId,
-    thread_id: threadId,
-    type: state.chatOpenType ?? 0,
-    message: latestMessage,
-    sent_at: new Date().toISOString(),
-  };
-
-  try {
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-      body: JSON.stringify(payload),
-    });
-
-    if (response.type !== 'opaque' && !response.ok) {
-      console.error('Webhook call failed with non-2xx response.', response.status, response.statusText);
-    }
-  } catch (error) {
-    console.error('Webhook call failed before reaching n8n. Check CORS / endpoint configuration.', error);
-  }
-}
-
 async function createFreshThread() {
   await ensureProfile(state.session.user);
 
@@ -479,16 +443,13 @@ async function sendChatMessage(event) {
   addMessage(message, 'user');
   ui.chatInput.value = '';
 
-  await triggerWebhook(message);
   await pollForAssistantReply(data.created_at);
 }
 
-async function openChat(type = 0) {
+async function openChat() {
   try {
-    state.chatOpenType = Number.isFinite(Number(type)) ? Number(type) : 0;
     ui.chatMessages.innerHTML = '';
     await createFreshThread();
-    await triggerWebhook();
     ui.chatModal.classList.remove('hidden');
   } catch (error) {
     alert(`Chat konnte nicht geöffnet werden: ${error.message}`);
@@ -498,7 +459,6 @@ async function openChat(type = 0) {
 async function closeChat() {
   ui.chatModal.classList.add('hidden');
   ui.chatMessages.innerHTML = '';
-  state.chatOpenType = 0;
   await deleteCurrentThread();
 }
 
