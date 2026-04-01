@@ -1,5 +1,4 @@
 const SUPABASE_CONFIG_PATH = './supabase.credentials.json';
-const WEBHOOK_URL = '';
 
 const CHANNEL_LABELS = {
   instagram: 'Instagram',
@@ -13,6 +12,8 @@ const CHANNEL_LABELS = {
 const state = {
   supabase: null,
   session: null,
+  webhookUrl: '',
+  chatOpenType: 0,
   currentThreadId: null,
   pollTimer: null,
   shownAssistantMessageIds: new Set(),
@@ -119,6 +120,7 @@ async function loadConfig() {
 async function initSupabase() {
   const config = await loadConfig();
   state.supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+  state.webhookUrl = config.webhookUrl || '';
 
   const { data } = await state.supabase.auth.getSession();
   state.session = data.session;
@@ -361,15 +363,18 @@ async function verifyOtp() {
 }
 
 async function triggerWebhook() {
-  const uid = state.session?.user?.id;
-  if (!WEBHOOK_URL || !uid) {
+  const profileId = state.session?.user?.id;
+  if (!state.webhookUrl || !profileId) {
     return;
   }
 
-  await fetch(WEBHOOK_URL, {
+  await fetch(state.webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ uid, type: 0 }),
+    body: JSON.stringify({
+      profile_id: profileId,
+      type: state.chatOpenType ?? 0,
+    }),
   });
 }
 
@@ -461,8 +466,9 @@ async function sendChatMessage(event) {
   await pollForAssistantReply(data.created_at);
 }
 
-async function openChat() {
+async function openChat(type = 0) {
   try {
+    state.chatOpenType = Number.isFinite(Number(type)) ? Number(type) : 0;
     ui.chatMessages.innerHTML = '';
     await createFreshThread();
     ui.chatModal.classList.remove('hidden');
@@ -474,6 +480,7 @@ async function openChat() {
 async function closeChat() {
   ui.chatModal.classList.add('hidden');
   ui.chatMessages.innerHTML = '';
+  state.chatOpenType = 0;
   await deleteCurrentThread();
 }
 
