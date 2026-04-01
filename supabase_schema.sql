@@ -1,4 +1,4 @@
--- Supabase Chat Tabellen + Policies
+-- Supabase Chat + Kampagnen Tabellen + Policies
 -- In Supabase SQL Editor ausführen
 
 create extension if not exists pgcrypto;
@@ -80,12 +80,39 @@ create table if not exists public.chat_messages (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.campaigns (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  name text not null,
+  channels text[] not null default array['instagram']::text[],
+  status text not null default 'active' check (status in ('active', 'inactive')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create or replace function public.set_campaigns_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_campaigns_updated_at on public.campaigns;
+create trigger trg_campaigns_updated_at
+before update on public.campaigns
+for each row
+execute function public.set_campaigns_updated_at();
+
 alter table public.chat_messages
   drop column if exists profile_id;
 
 alter table public.profiles disable row level security;
 alter table public.chat_threads disable row level security;
 alter table public.chat_messages disable row level security;
+alter table public.campaigns disable row level security;
 
 drop policy if exists "profiles_owner_select" on public.profiles;
 drop policy if exists "profiles_owner_insert" on public.profiles;
@@ -99,10 +126,19 @@ drop policy if exists "messages_owner_select" on public.chat_messages;
 drop policy if exists "messages_owner_insert" on public.chat_messages;
 drop policy if exists "messages_owner_delete" on public.chat_messages;
 
+drop policy if exists "campaigns_owner_select" on public.campaigns;
+drop policy if exists "campaigns_owner_insert" on public.campaigns;
+drop policy if exists "campaigns_owner_update" on public.campaigns;
+drop policy if exists "campaigns_owner_delete" on public.campaigns;
+
 create index if not exists idx_chat_messages_thread_created_at
   on public.chat_messages(thread_id, created_at desc);
+
+create index if not exists idx_campaigns_profile_created_at
+  on public.campaigns(profile_id, created_at desc);
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update on table public.profiles to authenticated;
 grant select, insert, delete on table public.chat_threads to authenticated;
 grant select, insert, delete on table public.chat_messages to authenticated;
+grant select, insert, update, delete on table public.campaigns to authenticated;
