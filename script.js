@@ -6,6 +6,7 @@ const state = {
   session: null,
   currentThreadId: null,
   pollTimer: null,
+  lastSeenAssistantMessageId: null,
 };
 
 const ui = {
@@ -194,6 +195,7 @@ async function createFreshThread() {
   }
 
   state.currentThreadId = data.id;
+  state.lastSeenAssistantMessageId = null;
 }
 
 async function deleteCurrentThread() {
@@ -204,25 +206,34 @@ async function deleteCurrentThread() {
 
   await state.supabase.from('chat_threads').delete().eq('id', state.currentThreadId);
   state.currentThreadId = null;
+  state.lastSeenAssistantMessageId = null;
 }
 
-async function pollForAssistantReply() {
+async function pollForAssistantReply(lastUserMessageCreatedAt) {
   clearPolling();
 
   state.pollTimer = setInterval(async () => {
-    const { data, error } = await state.supabase
+    let query = state.supabase
       .from('chat_messages')
-      .select('id, message')
+      .select('id, message, created_at')
       .eq('thread_id', state.currentThreadId)
       .eq('role', 'assistant')
-      .order('created_at', { ascending: false })
+      .gt('created_at', lastUserMessageCreatedAt)
+      .order('created_at', { ascending: true })
       .limit(1);
+
+    if (state.lastSeenAssistantMessageId !== null) {
+      query = query.gt('id', state.lastSeenAssistantMessageId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       return;
     }
 
     if (data && data.length > 0) {
+      state.lastSeenAssistantMessageId = data[0].id;
       addMessage(data[0].message, 'assistant');
       clearPolling();
     }
@@ -236,11 +247,15 @@ async function sendChatMessage(event) {
     return;
   }
 
-  const { error } = await state.supabase.from('chat_messages').insert({
-    thread_id: state.currentThreadId,
-    role: 'user',
-    message,
-  });
+  const { data, error } = await state.supabase
+    .from('chat_messages')
+    .insert({
+      thread_id: state.currentThreadId,
+      role: 'user',
+      message,
+    })
+    .select('created_at')
+    .single();
 
   if (error) {
     alert(`Nachricht konnte nicht gespeichert werden: ${error.message}`);
@@ -251,7 +266,7 @@ async function sendChatMessage(event) {
   ui.chatInput.value = '';
 
   await triggerWebhook();
-  await pollForAssistantReply();
+  await pollForAssistantReply(data.created_at);
 }
 
 async function openChat() {
