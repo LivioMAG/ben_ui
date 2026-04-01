@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Kampagnenübersicht für das Marketing AI Dashboard." />
+    <title>Marketing AI Dashboard · Kampagnen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="kampagnen.css" />
+  </head>
+  <body>
+    <main class="dashboard">
+      <header class="topbar card">
+        <div>
+          <p class="eyebrow">Marketing-AI-Dashboard</p>
+          <h1>Kampagnenübersicht</h1>
+        </div>
+        <div class="header-actions">
+          <button id="settingsBtn" class="ghost" type="button">Einstellungen</button>
+          <button id="logoutBtn" type="button">Logout</button>
+        </div>
+      </header>
+
+      <section class="card create-section">
+        <h2>Neue Kampagne anlegen</h2>
+        <form id="campaignForm" class="campaign-form">
+          <label>
+            Kampagnenname
+            <input id="campaignName" name="campaignName" type="text" required minlength="2" placeholder="Frühlingsaktion 2026" />
+          </label>
+
+          <label>
+            Plattform
+            <select id="platform" name="platform" required>
+              <option value="instagram">Instagram</option>
+              <option value="facebook" disabled>Facebook (bald verfügbar)</option>
+              <option value="tiktok" disabled>TikTok (bald verfügbar)</option>
+            </select>
+          </label>
+
+          <label>
+            Währung
+            <input type="text" value="CHF" readonly />
+          </label>
+
+          <label>
+            Zeitzone
+            <input type="text" value="Europe/Zurich" readonly />
+          </label>
+
+          <label>
+            Status
+            <input type="text" value="aktiv" readonly />
+          </label>
+
+          <button type="submit">Kampagne erstellen</button>
+        </form>
+        <p id="status" class="status">Bereit.</p>
+      </section>
+
+      <section class="card">
+        <h2>Deine Kampagnen</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Plattform</th>
+                <th>Währung</th>
+                <th>Zeitzone</th>
+                <th>Status</th>
+                <th>Zuletzt synchronisiert</th>
+                <th>Erstellt am</th>
+              </tr>
+            </thead>
+            <tbody id="campaignTableBody">
+              <tr>
+                <td colspan="7">Noch keine Kampagnen vorhanden.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="kampagnen.js"></script>
+  </body>
+</html>
