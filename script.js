@@ -238,7 +238,6 @@ async function sendChatMessage(event) {
 
   const { error } = await state.supabase.from('chat_messages').insert({
     thread_id: state.currentThreadId,
-    profile_id: state.session.user.id,
     role: 'user',
     message,
   });

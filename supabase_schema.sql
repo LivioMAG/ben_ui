@@ -75,11 +75,13 @@ create table if not exists public.chat_threads (
 create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),
   thread_id uuid not null references public.chat_threads(id) on delete cascade,
-  profile_id uuid not null references public.profiles(id) on delete cascade,
   role text not null check (role in ('user', 'assistant')),
   message text not null,
   created_at timestamptz not null default now()
 );
+
+alter table public.chat_messages
+  drop column if exists profile_id;
 
 alter table public.profiles disable row level security;
 alter table public.chat_threads disable row level security;
