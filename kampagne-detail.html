@@ -22,29 +22,39 @@
         </div>
         <div class="header-actions">
           <button type="button" id="backBtn" class="ghost">Zurück zur Übersicht</button>
+          <button type="button" id="resetThreadBtn" class="ghost danger">Thread löschen</button>
         </div>
       </header>
 
-      <section class="card">
-        <h2>Chat</h2>
-        <div id="chatMessages" class="chat-messages" aria-live="polite">
-          <p class="status">Lade Nachrichten…</p>
-        </div>
+      <section class="chat-report-layout">
+        <article class="card chat-card">
+          <h2>Chat</h2>
+          <div id="chatMessages" class="chat-messages" aria-live="polite">
+            <p class="status">Lade Nachrichten…</p>
+          </div>
 
-        <form id="chatForm" class="chat-form">
-          <label>
-            Nachricht
-            <textarea
-              id="chatInput"
-              name="chatInput"
-              rows="3"
-              maxlength="2000"
-              required
-              placeholder="Nachricht an den Bot schreiben…"
-            ></textarea>
-          </label>
-          <button type="submit">Senden</button>
-        </form>
+          <form id="chatForm" class="chat-form">
+            <label>
+              Nachricht
+              <textarea
+                id="chatInput"
+                name="chatInput"
+                rows="3"
+                maxlength="2000"
+                required
+                placeholder="Nachricht an den Bot schreiben…"
+              ></textarea>
+            </label>
+            <button type="submit">Senden</button>
+          </form>
+        </article>
+
+        <article class="card report-card">
+          <h2>KI-Bericht</h2>
+          <div id="reportMessages" class="chat-messages report-messages" aria-live="polite">
+            <p class="status">Noch keine KI-Antwort vorhanden.</p>
+          </div>
+        </article>
       </section>
 
       <section class="card status-grid">

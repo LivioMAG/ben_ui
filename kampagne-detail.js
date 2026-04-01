@@ -10,10 +10,12 @@ const statusEl = document.getElementById("status");
 const systemStatusEl = document.getElementById("systemStatus");
 const reportStatusEl = document.getElementById("reportStatus");
 const chatMessagesEl = document.getElementById("chatMessages");
+const reportMessagesEl = document.getElementById("reportMessages");
 const chatForm = document.getElementById("chatForm");
 const chatInput = document.getElementById("chatInput");
 const audienceSelect = document.getElementById("audienceSelect");
 const audienceForm = document.getElementById("audienceForm");
+const resetThreadBtn = document.getElementById("resetThreadBtn");
 
 let supabaseClient = null;
 let sessionUser = null;
@@ -22,6 +24,8 @@ let selectedAudienceId = null;
 let pollHandle = null;
 let lastMessageAt = null;
 let webhookUrl = "";
+const renderedMessageIds = new Set();
+let pollingEnabled = true;
 
 void init();
 
@@ -63,17 +67,27 @@ async function init() {
     ensureThreadAndLoadMessages()
   ]);
 
-  pollHandle = window.setInterval(loadMessages, CHAT_POLL_INTERVAL_MS);
+  startPolling();
 }
 
 function bindEvents() {
   chatForm.addEventListener("submit", onSendMessage);
   audienceForm.addEventListener("submit", onCreateAudience);
   audienceSelect.addEventListener("change", onAudienceChange);
+  resetThreadBtn.addEventListener("click", onResetThread);
 
   window.addEventListener("beforeunload", () => {
     if (pollHandle) window.clearInterval(pollHandle);
   });
+}
+
+function startPolling() {
+  if (pollHandle) window.clearInterval(pollHandle);
+  if (!pollingEnabled) return;
+  pollHandle = window.setInterval(() => {
+    if (!pollingEnabled) return;
+    void loadMessages();
+  }, CHAT_POLL_INTERVAL_MS);
 }
 
 async function loadCampaign() {
@@ -151,7 +165,7 @@ async function ensureThreadAndLoadMessages() {
 }
 
 async function loadMessages() {
-  if (!threadId) return;
+  if (!threadId || !pollingEnabled) return;
 
   const query = supabaseClient
     .from("chat_nachrichten")
@@ -181,8 +195,11 @@ function renderMessages(messages) {
     return;
   }
 
-  const html = messages
+  const freshMessages = messages.filter((msg) => !renderedMessageIds.has(msg.id));
+  const hasExternalResponse = freshMessages.some((msg) => msg.rolle !== "benutzer");
+  const chatHtml = freshMessages
     .map((msg) => {
+      renderedMessageIds.add(msg.id);
       const role = msg.rolle === "benutzer" ? "Du" : msg.rolle === "ki" ? "Bot" : "System";
       return `
       <article class="chat-message role-${escapeHtml(msg.rolle)}">
@@ -192,15 +209,33 @@ function renderMessages(messages) {
     })
     .join("");
 
-  if (!html) return;
+  if (!chatHtml && !hasExternalResponse) return;
 
   if (!chatMessagesEl.querySelector(".chat-message")) {
-    chatMessagesEl.innerHTML = html;
+    chatMessagesEl.innerHTML = chatHtml;
   } else {
-    chatMessagesEl.insertAdjacentHTML("beforeend", html);
+    chatMessagesEl.insertAdjacentHTML("beforeend", chatHtml);
   }
 
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  renderReportMessages();
+
+  if (hasExternalResponse) {
+    pollingEnabled = false;
+    if (pollHandle) window.clearInterval(pollHandle);
+    setStatus("KI-Antwort erhalten. Automatisches Nachladen wurde gestoppt.", "success");
+  }
+}
+
+function renderReportMessages() {
+  const reportMessages = [...chatMessagesEl.querySelectorAll(".chat-message.role-ki, .chat-message.role-system")];
+  if (!reportMessages.length) {
+    reportMessagesEl.innerHTML = '<p class="status">Noch keine KI-Antwort vorhanden.</p>';
+    return;
+  }
+
+  reportMessagesEl.innerHTML = reportMessages.map((messageEl) => messageEl.outerHTML).join("");
+  reportMessagesEl.scrollTop = reportMessagesEl.scrollHeight;
 }
 
 async function onSendMessage(event) {
@@ -236,8 +271,39 @@ async function onSendMessage(event) {
 
   chatInput.value = "";
   setStatus("Nachricht gesendet.", "success");
+  pollingEnabled = true;
+  startPolling();
   await triggerWebhook(text);
   await loadMessages();
+}
+
+async function onResetThread() {
+  if (!threadId) return;
+
+  const confirmDelete = window.confirm("Thread wirklich löschen und Chat zurücksetzen?");
+  if (!confirmDelete) return;
+
+  const { error: deleteMessagesError } = await supabaseClient.from("chat_nachrichten").delete().eq("thread_id", threadId);
+  if (deleteMessagesError) {
+    setStatus(`Nachrichten konnten nicht gelöscht werden: ${deleteMessagesError.message}`, "error");
+    return;
+  }
+
+  const { error: deleteThreadError } = await supabaseClient.from("chat_threads").delete().eq("id", threadId);
+  if (deleteThreadError) {
+    setStatus(`Thread konnte nicht gelöscht werden: ${deleteThreadError.message}`, "error");
+    return;
+  }
+
+  chatMessagesEl.innerHTML = '<p class="status">Noch keine Nachrichten vorhanden.</p>';
+  reportMessagesEl.innerHTML = '<p class="status">Noch keine KI-Antwort vorhanden.</p>';
+  renderedMessageIds.clear();
+  lastMessageAt = null;
+  threadId = null;
+  pollingEnabled = true;
+  startPolling();
+  await ensureThreadAndLoadMessages();
+  setStatus("Thread wurde gelöscht und neu gestartet.", "success");
 }
 
 async function triggerWebhook(message) {
