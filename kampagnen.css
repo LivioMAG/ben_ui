@@ -178,6 +178,22 @@ tbody tr[data-id]:hover {
   grid-template-rows: auto 1fr auto;
 }
 
+.chat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  padding: 0;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
 .report-card {
   grid-template-rows: auto 1fr;
 }
@@ -187,10 +203,12 @@ tbody tr[data-id]:hover {
 }
 
 .chat-message {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 10px 12px;
+  border-radius: 16px;
+  padding: 9px 12px;
   background: rgba(8, 14, 28, 0.6);
+  max-width: min(78%, 560px);
+  width: fit-content;
+  box-shadow: 0 8px 18px rgba(3, 8, 18, 0.3);
 }
 
 .chat-message header {
@@ -205,11 +223,47 @@ tbody tr[data-id]:hover {
 }
 
 .role-benutzer {
-  border-color: rgba(109, 125, 255, 0.5);
+  border: 1px solid rgba(109, 125, 255, 0.5);
+  justify-self: start;
+  background: linear-gradient(145deg, rgba(97, 116, 255, 0.24), rgba(44, 60, 137, 0.2));
 }
 
 .role-ki {
-  border-color: rgba(41, 214, 201, 0.5);
+  border: 1px solid rgba(41, 214, 201, 0.55);
+  justify-self: end;
+  background: linear-gradient(145deg, rgba(39, 165, 148, 0.32), rgba(28, 112, 104, 0.24));
+}
+
+.role-system {
+  border: 1px solid var(--line);
+  justify-self: center;
+  max-width: 90%;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.report-entry {
+  border: 1px solid rgba(41, 214, 201, 0.4);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(9, 20, 35, 0.75);
+  display: grid;
+  gap: 8px;
+}
+
+.report-entry h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.report-entry p {
+  margin: 0;
+  color: #dce7ff;
+  line-height: 1.45;
+}
+
+.report-meta {
+  color: var(--muted);
+  font-size: 0.8rem;
 }
 
 .chat-form {

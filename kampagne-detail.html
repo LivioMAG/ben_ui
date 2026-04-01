@@ -22,13 +22,23 @@
         </div>
         <div class="header-actions">
           <button type="button" id="backBtn" class="ghost">Zurück zur Übersicht</button>
-          <button type="button" id="resetThreadBtn" class="ghost danger">Thread löschen</button>
         </div>
       </header>
 
       <section class="chat-report-layout">
         <article class="card chat-card">
-          <h2>Chat</h2>
+          <div class="chat-card-header">
+            <h2>Chat</h2>
+            <button
+              type="button"
+              id="resetThreadBtn"
+              class="ghost danger icon-button"
+              title="Thread löschen"
+              aria-label="Thread löschen"
+            >
+              ×
+            </button>
+          </div>
           <div id="chatMessages" class="chat-messages" aria-live="polite">
             <p class="status">Lade Nachrichten…</p>
           </div>
@@ -42,7 +52,7 @@
                 rows="3"
                 maxlength="2000"
                 required
-                placeholder="Nachricht an den Bot schreiben…"
+                placeholder="Nachricht an Jemmy schreiben…"
               ></textarea>
             </label>
             <button type="submit">Senden</button>
@@ -52,7 +62,7 @@
         <article class="card report-card">
           <h2>KI-Bericht</h2>
           <div id="reportMessages" class="chat-messages report-messages" aria-live="polite">
-            <p class="status">Noch keine KI-Antwort vorhanden.</p>
+            <p class="status">Noch kein Bericht vorhanden.</p>
           </div>
         </article>
       </section>
