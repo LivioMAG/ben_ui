@@ -32,7 +32,6 @@ const WORKFLOW_STEP_CONFIG = [
 const state = {
   supabase: null,
   session: null,
-  currentThreadId: null,
   chatPollTimer: null,
   workflowPollTimer: null,
   shownAssistantMessageIds: new Set(),
@@ -41,6 +40,8 @@ const state = {
   workflows: [],
   selectedWorkflowId: null,
   workflowSnapshot: null,
+  currentThreadId: null,
+  ephemeralThreadId: null,
 };
 
 const ui = {
@@ -79,13 +80,13 @@ const ui = {
   workflowCards: document.getElementById('workflowCards'),
   workflowEditor: document.getElementById('workflowEditor'),
   workflowEditorTitle: document.getElementById('workflowEditorTitle'),
-  workflowModal: document.getElementById('workflowModal'),
-  workflowModalTitle: document.getElementById('workflowModalTitle'),
-  closeWorkflowModalBtn: document.getElementById('closeWorkflowModalBtn'),
-  workflowTimeline: document.getElementById('workflowTimeline'),
-  workflowChatMessages: document.getElementById('workflowChatMessages'),
-  workflowChatForm: document.getElementById('workflowChatForm'),
-  workflowChatInput: document.getElementById('workflowChatInput'),
+  workflowModal: null,
+  workflowModalTitle: null,
+  closeWorkflowModalBtn: null,
+  workflowTimeline: null,
+  workflowChatMessages: null,
+  workflowChatForm: null,
+  workflowChatInput: null,
 };
 
 function setAuthUi() {
@@ -100,7 +101,7 @@ function setAuthUi() {
   if (!loggedIn) {
     ui.campaignOverview.classList.add('hidden');
     ui.campaignDetail.classList.add('hidden');
-    ui.workflowModal.classList.add('hidden');
+    ui.workflowModal?.classList.add('hidden');
     clearChatPolling();
     clearWorkflowPolling();
     return;
@@ -277,42 +278,11 @@ function computeWorkflowProgress(workflow) {
 }
 
 function renderWorkflowTimeline(workflow) {
-  ui.workflowTimeline.innerHTML = '';
-  const progress = computeWorkflowProgress(workflow);
-
-  for (let index = 1; index <= 7; index += 1) {
-    const stepConfig = WORKFLOW_STEP_CONFIG[index - 1];
-    const answer = (workflow[`q${index}_answer`] || '').trim();
-    const aiComment = (workflow[`q${index}_ai_comment`] || '').trim();
-    const item = document.createElement('div');
-    item.className = 'timeline-item';
-    const valid = Boolean(workflow[`q${index}_is_valid`]);
-    const isCurrent = index === progress.current && !valid;
-    const hasContent = Boolean(answer);
-    const hasAiIssue = Boolean(aiComment);
-    const statusSymbol = hasContent ? (hasAiIssue ? '❗' : '✓') : '•';
-    const statusClass = hasContent ? (hasAiIssue ? 'is-issue' : 'is-ok') : 'is-empty';
-    const answerText = hasContent ? answer : 'Noch keine Antwort vorhanden';
-    const connectorClass = index <= progress.completed ? 'is-active' : '';
-    item.classList.toggle('is-valid', valid);
-    item.classList.toggle('is-current', isCurrent);
-    item.classList.toggle('is-filled', hasContent);
-    item.setAttribute('draggable', hasContent ? 'true' : 'false');
-    item.dataset.stepIndex = String(index);
-    item.dataset.stepLabel = stepConfig.label;
-    item.dataset.dragMessage = `${stepConfig.label} (Q${index}): ${answerText}`;
-    item.innerHTML = `
-      <span class="timeline-beam ${connectorClass}" aria-hidden="true"></span>
-      <div class="timeline-text">
-        <strong>Schritt ${index}: ${stepConfig.label}</strong>
-        <small>${answerText}</small>
-      </div>
-      <div class="timeline-status ${statusClass}" title="${hasAiIssue ? aiComment : 'Kein AI-Kommentar vorhanden'}">
-        ${statusSymbol}
-      </div>
-    `;
-    ui.workflowTimeline.appendChild(item);
+  if (!ui.workflowTimeline || !window.TargetPopup) {
+    return;
   }
+
+  window.TargetPopup.renderTimeline(ui.workflowTimeline, workflow, WORKFLOW_STEP_CONFIG);
 }
 
 function renderWorkflowEditor(workflow) {
@@ -565,9 +535,9 @@ async function verifyOtp() {
 async function createFreshThread({ chatType = 0, targetDocumentId = null, targetTable = null } = {}) {
   await ensureProfile(state.session.user);
 
-  if (state.currentThreadId) {
-    await state.supabase.from('chat_threads').delete().eq('id', state.currentThreadId);
-    state.currentThreadId = null;
+  if (chatType === 0 && state.ephemeralThreadId) {
+    await state.supabase.from('chat_threads').delete().eq('id', state.ephemeralThreadId);
+    state.ephemeralThreadId = null;
   }
 
   const { data, error } = await state.supabase
@@ -586,17 +556,22 @@ async function createFreshThread({ chatType = 0, targetDocumentId = null, target
   }
 
   state.currentThreadId = data.id;
+  if (chatType === 0) {
+    state.ephemeralThreadId = data.id;
+  }
   state.shownAssistantMessageIds = new Set();
 }
 
 async function deleteCurrentThread() {
   clearChatPolling();
-  if (!state.currentThreadId) {
+  if (!state.ephemeralThreadId) {
+    state.currentThreadId = null;
     return;
   }
 
-  await state.supabase.from('chat_threads').delete().eq('id', state.currentThreadId);
+  await state.supabase.from('chat_threads').delete().eq('id', state.ephemeralThreadId);
   state.currentThreadId = null;
+  state.ephemeralThreadId = null;
   state.shownAssistantMessageIds = new Set();
 }
 
@@ -719,16 +694,50 @@ function startWorkflowPolling() {
 async function openWorkflowModal(workflowId) {
   state.selectedWorkflowId = workflowId;
   const workflow = getSelectedWorkflow();
-  if (!workflow) {
+  if (!workflow || !ui.workflowModal) {
     return;
   }
 
   ui.workflowChatMessages.innerHTML = '';
-  await createFreshThread({
-    chatType: 1,
-    targetDocumentId: workflow.id,
-    targetTable: 'campaign_target_audiences',
+
+  const { data: existingThread } = await state.supabase
+    .from('chat_threads')
+    .select('id')
+    .eq('profile_id', state.session.user.id)
+    .eq('chat_type', 1)
+    .eq('target_document_id', workflow.id)
+    .eq('target_table', 'campaign_target_audiences')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingThread?.id) {
+    state.currentThreadId = existingThread.id;
+    state.shownAssistantMessageIds = new Set();
+  } else {
+    await createFreshThread({
+      chatType: 1,
+      targetDocumentId: workflow.id,
+      targetTable: 'campaign_target_audiences',
+    });
+  }
+
+  const { data: messages } = await state.supabase
+    .from('chat_messages')
+    .select('id, role, message')
+    .eq('thread_id', state.currentThreadId)
+    .order('created_at', { ascending: true });
+
+  (messages || []).forEach((row) => {
+    const node = document.createElement('div');
+    node.className = `message ${row.role === 'assistant' ? 'bot' : 'user'}`;
+    node.textContent = row.message;
+    ui.workflowChatMessages.appendChild(node);
+    if (row.role === 'assistant') {
+      state.shownAssistantMessageIds.add(row.id);
+    }
   });
+  ui.workflowChatMessages.scrollTop = ui.workflowChatMessages.scrollHeight;
 
   renderWorkflowEditor(workflow);
   state.workflowSnapshot = '';
@@ -737,11 +746,16 @@ async function openWorkflowModal(workflowId) {
 }
 
 async function closeWorkflowModal() {
+  if (!ui.workflowModal) {
+    return;
+  }
+
   ui.workflowModal.classList.add('hidden');
   ui.workflowChatMessages.innerHTML = '';
   clearWorkflowPolling();
   state.workflowSnapshot = null;
-  await deleteCurrentThread();
+  state.currentThreadId = null;
+  state.shownAssistantMessageIds = new Set();
 }
 
 async function sendWorkflowChatMessage(event) {
@@ -821,6 +835,28 @@ async function handleWorkflowCardDrop(event) {
   await sendWorkflowTextMessage(text);
 }
 
+
+async function loadTargetPopupTemplate() {
+  const mount = document.getElementById('targetPopupMount');
+  if (!mount) {
+    return;
+  }
+
+  const response = await fetch('./popups/target-popup.html');
+  if (!response.ok) {
+    throw new Error('Target-Popup konnte nicht geladen werden.');
+  }
+
+  mount.innerHTML = await response.text();
+  ui.workflowModal = document.getElementById('targetModal');
+  ui.workflowModalTitle = document.getElementById('targetModalTitle');
+  ui.closeWorkflowModalBtn = document.getElementById('closeTargetModalBtn');
+  ui.workflowTimeline = document.getElementById('targetTimeline');
+  ui.workflowChatMessages = document.getElementById('targetChatMessages');
+  ui.workflowChatForm = document.getElementById('targetChatForm');
+  ui.workflowChatInput = document.getElementById('targetChatInput');
+}
+
 function setupTabs() {
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -861,11 +897,11 @@ function bindEvents() {
 
     openWorkflowModal(button.dataset.openWorkflow).catch((error) => alert(error.message));
   });
-  ui.closeWorkflowModalBtn.addEventListener('click', () => {
+  ui.closeWorkflowModalBtn?.addEventListener('click', () => {
     closeWorkflowModal().catch((error) => alert(error.message));
   });
-  ui.workflowChatForm.addEventListener('submit', sendWorkflowChatMessage);
-  ui.workflowTimeline.addEventListener('dragstart', (event) => {
+  ui.workflowChatForm?.addEventListener('submit', sendWorkflowChatMessage);
+  ui.workflowTimeline?.addEventListener('dragstart', (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const card = target?.closest('.timeline-item');
     if (!card || card.getAttribute('draggable') !== 'true') {
@@ -875,14 +911,14 @@ function bindEvents() {
     event.dataTransfer.setData('text/plain', card.dataset.dragMessage || '');
     event.dataTransfer.effectAllowed = 'copy';
   });
-  ui.workflowChatMessages.addEventListener('dragover', (event) => {
+  ui.workflowChatMessages?.addEventListener('dragover', (event) => {
     event.preventDefault();
     ui.workflowChatMessages.classList.add('is-drop-target');
   });
-  ui.workflowChatMessages.addEventListener('dragleave', () => {
+  ui.workflowChatMessages?.addEventListener('dragleave', () => {
     ui.workflowChatMessages.classList.remove('is-drop-target');
   });
-  ui.workflowChatMessages.addEventListener('drop', (event) => {
+  ui.workflowChatMessages?.addEventListener('drop', (event) => {
     ui.workflowChatMessages.classList.remove('is-drop-target');
     handleWorkflowCardDrop(event).catch((error) => alert(error.message));
   });
@@ -894,6 +930,7 @@ function bindEvents() {
 
 (async function boot() {
   setupTabs();
+  await loadTargetPopupTemplate();
   bindEvents();
   try {
     await initSupabase();
