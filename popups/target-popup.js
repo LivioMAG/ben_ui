@@ -20,7 +20,10 @@
       item.classList.toggle('is-filled', Boolean(answer));
       item.setAttribute('draggable', answer ? 'true' : 'false');
       item.dataset.dragMessage = `${cfg.label} (Q${index}): ${answer || 'Noch keine Antwort vorhanden'}`;
-      item.innerHTML = `<div class="timeline-label">${cfg.label}</div>`;
+      item.innerHTML = `
+        <div class="timeline-label">${cfg.label}</div>
+        <div class="timeline-answer">${answer || 'Noch keine Antwort vorhanden'}</div>
+      `;
       container.appendChild(item);
     }
   }

@@ -1,8 +1,8 @@
 <section id="targetModal" class="target-modal hidden">
   <div class="target-modal-window">
     <div class="target-modal-header">
-      <h3 id="targetModalTitle">Zielgruppe</h3>
-      <button id="closeTargetModalBtn" class="ghost">Schließen</button>
+      <h3 id="targetModalTitle">Zielgruppendefinitionierung</h3>
+      <button id="closeTargetModalBtn" class="target-close-btn">✕ Schließen</button>
     </div>
 
     <div class="target-modal-body">
@@ -12,11 +12,10 @@
       </aside>
 
       <section class="target-chat-panel">
-        <h4>Targeting-Chat</h4>
         <div id="targetChatMessages" class="chat-messages"></div>
         <form id="targetChatForm" class="chat-input-row">
           <input id="targetChatInput" type="text" placeholder="Nachricht schreiben ..." autocomplete="off" required />
-          <button type="submit">Senden</button>
+          <button type="submit" class="target-send-btn">Senden</button>
         </form>
       </section>
     </div>

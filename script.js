@@ -292,7 +292,7 @@ function renderWorkflowEditor(workflow) {
 
   ui.workflowEditor.classList.remove('hidden');
   ui.workflowEditorTitle.textContent = `Zielgruppe · ${workflow.final_summary || 'Neue Zielgruppe'}`;
-  ui.workflowModalTitle.textContent = `Zielgruppe · ${workflow.final_summary || 'Neue Zielgruppe'}`;
+  ui.workflowModalTitle.textContent = 'Zielgruppendefinitionierung';
   renderWorkflowTimeline(workflow);
 }
 
@@ -642,7 +642,14 @@ async function openChat() {
 async function closeChat() {
   ui.chatModal.classList.add('hidden');
   ui.chatMessages.innerHTML = '';
-  await deleteCurrentThread();
+
+  try {
+    await deleteCurrentThread();
+  } catch (_error) {
+    state.currentThreadId = null;
+    state.ephemeralThreadId = null;
+    state.shownAssistantMessageIds = new Set();
+  }
 }
 
 async function refreshSelectedWorkflow() {
