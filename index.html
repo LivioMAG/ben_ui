@@ -111,6 +111,24 @@
         </div>
 
         <button id="saveCampaignStatusBtn">Status speichern</button>
+
+        <hr />
+
+        <div class="workflow-header">
+          <h3>Zielgruppen</h3>
+          <button id="newWorkflowBtn" type="button">Neue Zielgruppe anlegen</button>
+        </div>
+        <div id="workflowEmpty" class="empty-state hidden">
+          Noch keine Zielgruppen vorhanden. Lege deine erste Zielgruppe an.
+        </div>
+        <div id="workflowCards" class="workflow-cards"></div>
+
+        <section id="workflowEditor" class="workflow-editor hidden">
+          <h3 id="workflowEditorTitle">Zielgruppe bearbeiten</h3>
+          <p class="workflow-hint">Links die Fragen, rechts deine Antworten. Danach auf Speichern klicken.</p>
+          <div class="workflow-grid" id="workflowGrid"></div>
+          <button id="saveWorkflowBtn" type="button">Zielgruppe speichern</button>
+        </section>
       </section>
     </main>
 

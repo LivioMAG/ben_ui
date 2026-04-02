@@ -106,6 +106,78 @@ before update on public.campaigns
 for each row
 execute function public.set_campaigns_updated_at();
 
+create table if not exists public.target_audience_workflows (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  campaign_id uuid not null references public.campaigns(id) on delete cascade,
+  session_id text not null,
+  product_input text not null,
+  status text not null default 'draft',
+  current_step integer not null default 1,
+  last_completed_step integer,
+  overall_ai_comment text,
+  final_summary text,
+  q1_question text not null default 'Wer benutzt dieses Produkt? (z. B. Privatperson, Business, Hobby, problemgetrieben)',
+  q1_answer text,
+  q1_is_valid boolean default false,
+  q1_ai_comment text,
+  q2_question text not null default 'Welche Gruppen könnten dieses Produkt kaufen? (Nenne idealerweise 3 konkrete Gruppen)',
+  q2_answer text,
+  q2_is_valid boolean default false,
+  q2_ai_comment text,
+  q3_question text not null default 'Kannst du die Gruppe weiter eingrenzen? (z. B. Alter, Beruf, Lebenssituation, Alltag)',
+  q3_answer text,
+  q3_is_valid boolean default false,
+  q3_ai_comment text,
+  q4_question text not null default 'Warum würde diese Person dieses Produkt kaufen? (z. B. Problem lösen, Status, Zeit sparen, Leidenschaft, Sicherheit, Anerkennung)',
+  q4_answer text,
+  q4_is_valid boolean default false,
+  q4_ai_comment text,
+  q5_question text not null default 'Wie dringend oder emotional ist das Bedürfnis? (Ist es eher dringend, emotional wichtig oder nur ein Nice-to-have?)',
+  q5_answer text,
+  q5_is_valid boolean default false,
+  q5_ai_comment text,
+  q6_question text not null default 'Kann die Zielgruppe sich das leisten und ist sie bereit, Geld dafür auszugeben?',
+  q6_answer text,
+  q6_is_valid boolean default false,
+  q6_ai_comment text,
+  q7_question text not null default 'Kann ich diese Zielgruppe gezielt erreichen? (z. B. über Plattformen, Communities, Interessen, Kanäle)',
+  q7_answer text,
+  q7_is_valid boolean default false,
+  q7_ai_comment text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint target_audience_workflows_status_check
+    check (status in ('draft', 'in_progress', 'completed', 'needs_revision')),
+  constraint target_audience_workflows_current_step_check
+    check (current_step between 1 and 7)
+);
+
+create or replace function public.set_target_audience_workflows_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_target_audience_workflows_updated_at on public.target_audience_workflows;
+create trigger trg_target_audience_workflows_updated_at
+before update on public.target_audience_workflows
+for each row
+execute function public.set_target_audience_workflows_updated_at();
+
+create index if not exists idx_target_audience_workflows_profile_id
+  on public.target_audience_workflows (profile_id);
+create index if not exists idx_target_audience_workflows_campaign_id
+  on public.target_audience_workflows (campaign_id);
+create index if not exists idx_target_audience_workflows_session_id
+  on public.target_audience_workflows (session_id);
+create index if not exists idx_target_audience_workflows_status
+  on public.target_audience_workflows (status);
+
 alter table public.chat_messages
   drop column if exists profile_id;
 
@@ -113,6 +185,8 @@ alter table public.profiles disable row level security;
 alter table public.chat_threads disable row level security;
 alter table public.chat_messages disable row level security;
 alter table public.campaigns disable row level security;
+alter table public.target_audience_workflows enable row level security;
+alter table public.target_audience_workflows force row level security;
 
 drop policy if exists "profiles_owner_select" on public.profiles;
 drop policy if exists "profiles_owner_insert" on public.profiles;
@@ -130,6 +204,35 @@ drop policy if exists "campaigns_owner_select" on public.campaigns;
 drop policy if exists "campaigns_owner_insert" on public.campaigns;
 drop policy if exists "campaigns_owner_update" on public.campaigns;
 drop policy if exists "campaigns_owner_delete" on public.campaigns;
+drop policy if exists "Users can view own target audience workflows" on public.target_audience_workflows;
+drop policy if exists "Users can insert own target audience workflows" on public.target_audience_workflows;
+drop policy if exists "Users can update own target audience workflows" on public.target_audience_workflows;
+drop policy if exists "Users can delete own target audience workflows" on public.target_audience_workflows;
+
+create policy "Users can view own target audience workflows"
+on public.target_audience_workflows
+for select
+to authenticated
+using (profile_id = auth.uid());
+
+create policy "Users can insert own target audience workflows"
+on public.target_audience_workflows
+for insert
+to authenticated
+with check (profile_id = auth.uid());
+
+create policy "Users can update own target audience workflows"
+on public.target_audience_workflows
+for update
+to authenticated
+using (profile_id = auth.uid())
+with check (profile_id = auth.uid());
+
+create policy "Users can delete own target audience workflows"
+on public.target_audience_workflows
+for delete
+to authenticated
+using (profile_id = auth.uid());
 
 create index if not exists idx_chat_messages_thread_created_at
   on public.chat_messages(thread_id, created_at desc);
@@ -142,3 +245,4 @@ grant select, insert, update on table public.profiles to authenticated;
 grant select, insert, delete on table public.chat_threads to authenticated;
 grant select, insert, delete on table public.chat_messages to authenticated;
 grant select, insert, update, delete on table public.campaigns to authenticated;
+grant select, insert, update, delete on table public.target_audience_workflows to authenticated;

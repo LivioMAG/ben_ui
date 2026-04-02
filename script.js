@@ -9,6 +9,16 @@ const CHANNEL_LABELS = {
   google_adwords: 'Google AdWords',
 };
 
+const DEFAULT_QUESTIONS = [
+  'Wer benutzt dieses Produkt? (z. B. Privatperson, Business, Hobby, problemgetrieben)',
+  'Welche Gruppen könnten dieses Produkt kaufen? (Nenne idealerweise 3 konkrete Gruppen)',
+  'Kannst du die Gruppe weiter eingrenzen? (z. B. Alter, Beruf, Lebenssituation, Alltag)',
+  'Warum würde diese Person dieses Produkt kaufen? (z. B. Problem lösen, Status, Zeit sparen, Leidenschaft, Sicherheit, Anerkennung)',
+  'Wie dringend oder emotional ist das Bedürfnis? (Ist es eher dringend, emotional wichtig oder nur ein Nice-to-have?)',
+  'Kann die Zielgruppe sich das leisten und ist sie bereit, Geld dafür auszugeben?',
+  'Kann ich diese Zielgruppe gezielt erreichen? (z. B. über Plattformen, Communities, Interessen, Kanäle)',
+];
+
 const state = {
   supabase: null,
   session: null,
@@ -17,6 +27,8 @@ const state = {
   shownAssistantMessageIds: new Set(),
   campaigns: [],
   selectedCampaignId: null,
+  workflows: [],
+  selectedWorkflowId: null,
 };
 
 const ui = {
@@ -50,6 +62,13 @@ const ui = {
   campaignDetailMeta: document.getElementById('campaignDetailMeta'),
   campaignStatusSelect: document.getElementById('campaignStatusSelect'),
   saveCampaignStatusBtn: document.getElementById('saveCampaignStatusBtn'),
+  newWorkflowBtn: document.getElementById('newWorkflowBtn'),
+  workflowEmpty: document.getElementById('workflowEmpty'),
+  workflowCards: document.getElementById('workflowCards'),
+  workflowEditor: document.getElementById('workflowEditor'),
+  workflowEditorTitle: document.getElementById('workflowEditorTitle'),
+  workflowGrid: document.getElementById('workflowGrid'),
+  saveWorkflowBtn: document.getElementById('saveWorkflowBtn'),
 };
 
 function setAuthUi() {
@@ -128,6 +147,8 @@ async function initSupabase() {
     if (!session?.user) {
       state.selectedCampaignId = null;
       state.campaigns = [];
+      state.workflows = [];
+      state.selectedWorkflowId = null;
       renderCampaigns();
       setAuthUi();
       return;
@@ -210,7 +231,63 @@ function renderCampaigns() {
   });
 }
 
-function openCampaignDetail(campaignId) {
+function getSelectedWorkflow() {
+  return state.workflows.find((workflow) => workflow.id === state.selectedWorkflowId) || null;
+}
+
+function renderWorkflowEditor(workflow) {
+  if (!workflow) {
+    ui.workflowEditor.classList.add('hidden');
+    ui.workflowGrid.innerHTML = '';
+    return;
+  }
+
+  ui.workflowEditor.classList.remove('hidden');
+  ui.workflowEditorTitle.textContent = `Zielgruppe bearbeiten · ${workflow.final_summary || 'Neue Zielgruppe'}`;
+
+  ui.workflowGrid.innerHTML = '';
+  for (let index = 1; index <= 7; index += 1) {
+    const row = document.createElement('div');
+    row.className = 'workflow-row';
+
+    const question = workflow[`q${index}_question`] || DEFAULT_QUESTIONS[index - 1];
+    const answer = workflow[`q${index}_answer`] || '';
+
+    row.innerHTML = `
+      <div class="workflow-question">Frage ${index}: ${question}</div>
+      <textarea class="workflow-answer" data-answer-index="${index}" placeholder="Antwort eingeben ...">${answer}</textarea>
+    `;
+
+    ui.workflowGrid.appendChild(row);
+  }
+}
+
+function renderWorkflows() {
+  ui.workflowCards.innerHTML = '';
+
+  if (state.workflows.length === 0) {
+    ui.workflowEmpty.classList.remove('hidden');
+    renderWorkflowEditor(null);
+    return;
+  }
+
+  ui.workflowEmpty.classList.add('hidden');
+
+  state.workflows.forEach((workflow) => {
+    const card = document.createElement('article');
+    card.className = 'workflow-card';
+    card.innerHTML = `
+      <strong>${workflow.final_summary || 'Zusammenfassung noch leer'}</strong>
+      <p>Status: ${workflow.status} · Letzter Schritt: ${workflow.last_completed_step || 0}/7</p>
+      <button type="button" data-open-workflow="${workflow.id}">Details öffnen</button>
+    `;
+    ui.workflowCards.appendChild(card);
+  });
+
+  renderWorkflowEditor(getSelectedWorkflow());
+}
+
+async function openCampaignDetail(campaignId) {
   const campaign = state.campaigns.find((entry) => entry.id === campaignId);
   if (!campaign) {
     return;
@@ -228,10 +305,14 @@ function openCampaignDetail(campaignId) {
 
   ui.campaignOverview.classList.add('hidden');
   ui.campaignDetail.classList.remove('hidden');
+  state.selectedWorkflowId = null;
+  await loadWorkflows();
 }
 
 function backToCampaignOverview() {
   state.selectedCampaignId = null;
+  state.workflows = [];
+  state.selectedWorkflowId = null;
   ui.campaignOverview.classList.remove('hidden');
   ui.campaignDetail.classList.add('hidden');
 }
@@ -254,6 +335,103 @@ async function loadCampaigns() {
 
   state.campaigns = data || [];
   renderCampaigns();
+}
+
+async function loadWorkflows() {
+  if (!state.selectedCampaignId || !state.session?.user?.id) {
+    return;
+  }
+
+  const { data, error } = await state.supabase
+    .from('target_audience_workflows')
+    .select('*')
+    .eq('profile_id', state.session.user.id)
+    .eq('campaign_id', state.selectedCampaignId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new Error(`Zielgruppen konnten nicht geladen werden: ${error.message}`);
+  }
+
+  state.workflows = data || [];
+  if (!state.workflows.some((workflow) => workflow.id === state.selectedWorkflowId)) {
+    state.selectedWorkflowId = state.workflows[0]?.id || null;
+  }
+  renderWorkflows();
+}
+
+function buildSummaryFromAnswers(answers) {
+  const primary = answers.find((answer) => answer.length > 0);
+  return primary ? `Zielgruppe: ${primary}` : '';
+}
+
+async function createWorkflow() {
+  if (!state.selectedCampaignId || !state.session?.user?.id) {
+    return;
+  }
+
+  const insertPayload = {
+    profile_id: state.session.user.id,
+    campaign_id: state.selectedCampaignId,
+    session_id: crypto.randomUUID(),
+    product_input: ui.campaignDetailTitle.textContent || 'Produkt',
+    status: 'draft',
+    current_step: 1,
+  };
+
+  DEFAULT_QUESTIONS.forEach((question, index) => {
+    const n = index + 1;
+    insertPayload[`q${n}_question`] = question;
+    insertPayload[`q${n}_is_valid`] = false;
+  });
+
+  const { error } = await state.supabase.from('target_audience_workflows').insert(insertPayload);
+  if (error) {
+    alert(`Zielgruppe konnte nicht angelegt werden: ${error.message}`);
+    return;
+  }
+
+  await loadWorkflows();
+}
+
+async function saveWorkflow() {
+  const workflow = getSelectedWorkflow();
+  if (!workflow) {
+    return;
+  }
+
+  const answers = [];
+  for (let index = 1; index <= 7; index += 1) {
+    const field = ui.workflowGrid.querySelector(`textarea[data-answer-index="${index}"]`);
+    answers.push((field?.value || '').trim());
+  }
+
+  const updatePayload = {};
+  answers.forEach((answer, index) => {
+    const n = index + 1;
+    updatePayload[`q${n}_answer`] = answer || null;
+    updatePayload[`q${n}_is_valid`] = Boolean(answer);
+  });
+
+  const completed = answers.filter((answer) => answer).length;
+  updatePayload.last_completed_step = completed;
+  updatePayload.current_step = Math.min(completed + 1, 7);
+  updatePayload.status = completed === 7 ? 'completed' : 'in_progress';
+  updatePayload.final_summary = buildSummaryFromAnswers(answers);
+
+  const { error } = await state.supabase
+    .from('target_audience_workflows')
+    .update(updatePayload)
+    .eq('id', workflow.id)
+    .eq('profile_id', state.session.user.id)
+    .eq('campaign_id', state.selectedCampaignId);
+
+  if (error) {
+    alert(`Zielgruppe konnte nicht gespeichert werden: ${error.message}`);
+    return;
+  }
+
+  await loadWorkflows();
 }
 
 async function createCampaign(event) {
@@ -491,7 +669,18 @@ function bindEvents() {
       return;
     }
 
-    openCampaignDetail(button.dataset.openCampaign);
+    openCampaignDetail(button.dataset.openCampaign).catch((error) => alert(error.message));
+  });
+  ui.newWorkflowBtn.addEventListener('click', createWorkflow);
+  ui.saveWorkflowBtn.addEventListener('click', saveWorkflow);
+  ui.workflowCards.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-open-workflow]');
+    if (!button) {
+      return;
+    }
+
+    state.selectedWorkflowId = button.dataset.openWorkflow;
+    renderWorkflowEditor(getSelectedWorkflow());
   });
 
   ui.openChatBtn.addEventListener('click', openChat);
