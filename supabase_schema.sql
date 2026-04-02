@@ -106,7 +106,7 @@ before update on public.campaigns
 for each row
 execute function public.set_campaigns_updated_at();
 
-create table if not exists public.target_audience_workflows (
+create table if not exists public.campaign_target_audiences (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
   campaign_id uuid not null references public.campaigns(id) on delete cascade,
@@ -147,13 +147,13 @@ create table if not exists public.target_audience_workflows (
   q7_ai_comment text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint target_audience_workflows_status_check
+  constraint campaign_target_audiences_status_check
     check (status in ('draft', 'in_progress', 'completed', 'needs_revision')),
-  constraint target_audience_workflows_current_step_check
+  constraint campaign_target_audiences_current_step_check
     check (current_step between 1 and 7)
 );
 
-create or replace function public.set_target_audience_workflows_updated_at()
+create or replace function public.set_campaign_target_audiences_updated_at()
 returns trigger
 language plpgsql
 as $$
@@ -163,20 +163,20 @@ begin
 end;
 $$;
 
-drop trigger if exists trg_target_audience_workflows_updated_at on public.target_audience_workflows;
-create trigger trg_target_audience_workflows_updated_at
-before update on public.target_audience_workflows
+drop trigger if exists trg_campaign_target_audiences_updated_at on public.campaign_target_audiences;
+create trigger trg_campaign_target_audiences_updated_at
+before update on public.campaign_target_audiences
 for each row
-execute function public.set_target_audience_workflows_updated_at();
+execute function public.set_campaign_target_audiences_updated_at();
 
-create index if not exists idx_target_audience_workflows_profile_id
-  on public.target_audience_workflows (profile_id);
-create index if not exists idx_target_audience_workflows_campaign_id
-  on public.target_audience_workflows (campaign_id);
-create index if not exists idx_target_audience_workflows_session_id
-  on public.target_audience_workflows (session_id);
-create index if not exists idx_target_audience_workflows_status
-  on public.target_audience_workflows (status);
+create index if not exists idx_campaign_target_audiences_profile_id
+  on public.campaign_target_audiences (profile_id);
+create index if not exists idx_campaign_target_audiences_campaign_id
+  on public.campaign_target_audiences (campaign_id);
+create index if not exists idx_campaign_target_audiences_session_id
+  on public.campaign_target_audiences (session_id);
+create index if not exists idx_campaign_target_audiences_status
+  on public.campaign_target_audiences (status);
 
 alter table public.chat_messages
   drop column if exists profile_id;
@@ -185,12 +185,12 @@ alter table public.profiles disable row level security;
 alter table public.chat_threads disable row level security;
 alter table public.chat_messages disable row level security;
 alter table public.campaigns disable row level security;
-alter table public.target_audience_workflows enable row level security;
-alter table public.target_audience_workflows force row level security;
-
-drop policy if exists "profiles_owner_select" on public.profiles;
-drop policy if exists "profiles_owner_insert" on public.profiles;
-drop policy if exists "profiles_owner_update" on public.profiles;
+alter table public.campaign_target_audiences disable row level security;
+drop policy if exists "Users can view own target audience workflows" on public.campaign_target_audiences;
+drop policy if exists "Users can insert own target audience workflows" on public.campaign_target_audiences;
+drop policy if exists "Users can update own target audience workflows" on public.campaign_target_audiences;
+drop policy if exists "Users can delete own target audience workflows" on public.campaign_target_audiences;
+grant select, insert, update, delete on table public.campaign_target_audiences to authenticated;
 
 drop policy if exists "threads_owner_select" on public.chat_threads;
 drop policy if exists "threads_owner_insert" on public.chat_threads;

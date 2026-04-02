@@ -343,7 +343,7 @@ async function loadWorkflows() {
   }
 
   const { data, error } = await state.supabase
-    .from('target_audience_workflows')
+    .from('campaign_target_audiences')
     .select('*')
     .eq('profile_id', state.session.user.id)
     .eq('campaign_id', state.selectedCampaignId)
@@ -385,7 +385,7 @@ async function createWorkflow() {
     insertPayload[`q${n}_is_valid`] = false;
   });
 
-  const { error } = await state.supabase.from('target_audience_workflows').insert(insertPayload);
+  const { error } = await state.supabase.from('campaign_target_audiences').insert(insertPayload);
   if (error) {
     alert(`Zielgruppe konnte nicht angelegt werden: ${error.message}`);
     return;
@@ -420,7 +420,7 @@ async function saveWorkflow() {
   updatePayload.final_summary = buildSummaryFromAnswers(answers);
 
   const { error } = await state.supabase
-    .from('target_audience_workflows')
+    .from('campaign_target_audiences')
     .update(updatePayload)
     .eq('id', workflow.id)
     .eq('profile_id', state.session.user.id)
