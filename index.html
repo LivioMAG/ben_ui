@@ -156,22 +156,13 @@
         <div class="workflow-modal-body">
           <aside class="workflow-timeline-panel">
             <h4>Fortschritt</h4>
+            <p class="workflow-progress-hint">Der Bot führt dich Schritt für Schritt durch den Workflow.</p>
             <div id="workflowTimeline" class="workflow-timeline"></div>
           </aside>
 
-          <section class="workflow-content-panel">
-            <div class="workflow-doc-meta">
-              <div><strong>Dokument-ID:</strong> <span id="workflowDocId">–</span></div>
-              <div><strong>Tabelle:</strong> <span id="workflowTableName">campaign_target_audiences</span></div>
-              <div><strong>Thread-ID:</strong> <span id="workflowThreadId">–</span></div>
-            </div>
-            <p class="workflow-hint">Die Daten werden alle ~2.5 Sekunden aktualisiert und der Fortschritt links automatisch angepasst.</p>
-            <div class="workflow-grid" id="workflowGrid"></div>
-            <button id="saveWorkflowBtn" type="button">Zielgruppe speichern</button>
-          </section>
-
           <section class="workflow-chat-panel">
-            <h4>Thread Chat (Typ 1)</h4>
+            <h4>Workflow-Chat</h4>
+            <p class="workflow-hint">Schreib einfach im Chat – der Bot füllt die Felder im Hintergrund automatisch.</p>
             <div id="workflowChatMessages" class="chat-messages"></div>
             <form id="workflowChatForm" class="chat-input-row">
               <input id="workflowChatInput" type="text" placeholder="Nachricht schreiben ..." autocomplete="off" required />

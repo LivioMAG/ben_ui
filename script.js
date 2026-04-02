@@ -69,15 +69,10 @@ const ui = {
   workflowCards: document.getElementById('workflowCards'),
   workflowEditor: document.getElementById('workflowEditor'),
   workflowEditorTitle: document.getElementById('workflowEditorTitle'),
-  workflowGrid: document.getElementById('workflowGrid'),
-  saveWorkflowBtn: document.getElementById('saveWorkflowBtn'),
   workflowModal: document.getElementById('workflowModal'),
   workflowModalTitle: document.getElementById('workflowModalTitle'),
   closeWorkflowModalBtn: document.getElementById('closeWorkflowModalBtn'),
   workflowTimeline: document.getElementById('workflowTimeline'),
-  workflowDocId: document.getElementById('workflowDocId'),
-  workflowTableName: document.getElementById('workflowTableName'),
-  workflowThreadId: document.getElementById('workflowThreadId'),
   workflowChatMessages: document.getElementById('workflowChatMessages'),
   workflowChatForm: document.getElementById('workflowChatForm'),
   workflowChatInput: document.getElementById('workflowChatInput'),
@@ -295,33 +290,13 @@ function renderWorkflowTimeline(workflow) {
 
 function renderWorkflowEditor(workflow) {
   if (!workflow) {
-    ui.workflowGrid.innerHTML = '';
     return;
   }
 
   ui.workflowEditor.classList.remove('hidden');
   ui.workflowEditorTitle.textContent = `Zielgruppe · ${workflow.final_summary || 'Neue Zielgruppe'}`;
   ui.workflowModalTitle.textContent = `Zielgruppe · ${workflow.final_summary || 'Neue Zielgruppe'}`;
-  ui.workflowDocId.textContent = workflow.id;
-  ui.workflowTableName.textContent = 'campaign_target_audiences';
-  ui.workflowThreadId.textContent = state.currentThreadId || '–';
   renderWorkflowTimeline(workflow);
-
-  ui.workflowGrid.innerHTML = '';
-  for (let index = 1; index <= 7; index += 1) {
-    const row = document.createElement('div');
-    row.className = 'workflow-row';
-
-    const question = workflow[`q${index}_question`] || DEFAULT_QUESTIONS[index - 1];
-    const answer = workflow[`q${index}_answer`] || '';
-
-    row.innerHTML = `
-      <div class="workflow-question">Frage ${index}: ${question}</div>
-      <textarea class="workflow-answer" data-answer-index="${index}" placeholder="Antwort eingeben ...">${answer}</textarea>
-    `;
-
-    ui.workflowGrid.appendChild(row);
-  }
 }
 
 function renderWorkflows() {
@@ -424,11 +399,6 @@ async function loadWorkflows() {
   renderWorkflows();
 }
 
-function buildSummaryFromAnswers(answers) {
-  const primary = answers.find((answer) => answer.length > 0);
-  return primary ? `Zielgruppe: ${primary}` : '';
-}
-
 async function createWorkflow() {
   if (!state.selectedCampaignId || !state.session?.user?.id) {
     return;
@@ -460,46 +430,6 @@ async function createWorkflow() {
   if (newestWorkflow) {
     await openWorkflowModal(newestWorkflow.id);
   }
-}
-
-async function saveWorkflow() {
-  const workflow = getSelectedWorkflow();
-  if (!workflow) {
-    return;
-  }
-
-  const answers = [];
-  for (let index = 1; index <= 7; index += 1) {
-    const field = ui.workflowGrid.querySelector(`textarea[data-answer-index="${index}"]`);
-    answers.push((field?.value || '').trim());
-  }
-
-  const updatePayload = {};
-  answers.forEach((answer, index) => {
-    const n = index + 1;
-    updatePayload[`q${n}_answer`] = answer || null;
-    updatePayload[`q${n}_is_valid`] = Boolean(answer);
-  });
-
-  const completed = answers.filter((answer) => answer).length;
-  updatePayload.last_completed_step = completed;
-  updatePayload.current_step = Math.min(completed + 1, 7);
-  updatePayload.status = completed === 7 ? 'completed' : 'in_progress';
-  updatePayload.final_summary = buildSummaryFromAnswers(answers);
-
-  const { error } = await state.supabase
-    .from('campaign_target_audiences')
-    .update(updatePayload)
-    .eq('id', workflow.id)
-    .eq('profile_id', state.session.user.id)
-    .eq('campaign_id', state.selectedCampaignId);
-
-  if (error) {
-    alert(`Zielgruppe konnte nicht gespeichert werden: ${error.message}`);
-    return;
-  }
-
-  await loadWorkflows();
 }
 
 async function createCampaign(event) {
@@ -773,7 +703,6 @@ async function openWorkflowModal(workflowId) {
     targetTable: 'campaign_target_audiences',
   });
 
-  ui.workflowThreadId.textContent = state.currentThreadId;
   renderWorkflowEditor(workflow);
   state.workflowSnapshot = '';
   ui.workflowModal.classList.remove('hidden');
@@ -879,7 +808,6 @@ function bindEvents() {
     openCampaignDetail(button.dataset.openCampaign).catch((error) => alert(error.message));
   });
   ui.newWorkflowBtn.addEventListener('click', createWorkflow);
-  ui.saveWorkflowBtn.addEventListener('click', saveWorkflow);
   ui.workflowCards.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-open-workflow]');
     if (!button) {
