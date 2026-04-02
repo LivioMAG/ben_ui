@@ -125,9 +125,7 @@
 
         <section id="workflowEditor" class="workflow-editor hidden">
           <h3 id="workflowEditorTitle">Zielgruppe bearbeiten</h3>
-          <p class="workflow-hint">Links die Fragen, rechts deine Antworten. Danach auf Speichern klicken.</p>
-          <div class="workflow-grid" id="workflowGrid"></div>
-          <button id="saveWorkflowBtn" type="button">Zielgruppe speichern</button>
+          <p class="workflow-hint">Öffne eine Zielgruppe über „Details öffnen“ im Popup-Modus.</p>
         </section>
       </section>
     </main>
@@ -145,6 +143,42 @@
           <input id="chatInput" type="text" placeholder="Nachricht schreiben ..." autocomplete="off" required />
           <button type="submit">Senden</button>
         </form>
+      </div>
+    </section>
+
+    <section id="workflowModal" class="workflow-modal hidden">
+      <div class="workflow-modal-window">
+        <div class="workflow-modal-header">
+          <h3 id="workflowModalTitle">Zielgruppe</h3>
+          <button id="closeWorkflowModalBtn" class="ghost">Schließen</button>
+        </div>
+
+        <div class="workflow-modal-body">
+          <aside class="workflow-timeline-panel">
+            <h4>Fortschritt</h4>
+            <div id="workflowTimeline" class="workflow-timeline"></div>
+          </aside>
+
+          <section class="workflow-content-panel">
+            <div class="workflow-doc-meta">
+              <div><strong>Dokument-ID:</strong> <span id="workflowDocId">–</span></div>
+              <div><strong>Tabelle:</strong> <span id="workflowTableName">campaign_target_audiences</span></div>
+              <div><strong>Thread-ID:</strong> <span id="workflowThreadId">–</span></div>
+            </div>
+            <p class="workflow-hint">Die Daten werden alle ~2.5 Sekunden aktualisiert und der Fortschritt links automatisch angepasst.</p>
+            <div class="workflow-grid" id="workflowGrid"></div>
+            <button id="saveWorkflowBtn" type="button">Zielgruppe speichern</button>
+          </section>
+
+          <section class="workflow-chat-panel">
+            <h4>Thread Chat (Typ 1)</h4>
+            <div id="workflowChatMessages" class="chat-messages"></div>
+            <form id="workflowChatForm" class="chat-input-row">
+              <input id="workflowChatInput" type="text" placeholder="Nachricht schreiben ..." autocomplete="off" required />
+              <button type="submit">Senden</button>
+            </form>
+          </section>
+        </div>
       </div>
     </section>
 
