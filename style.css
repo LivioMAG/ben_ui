@@ -206,6 +206,70 @@ button:disabled {
   gap: 0.4rem;
 }
 
+.workflow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.workflow-cards {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.workflow-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.workflow-card p {
+  margin: 0;
+  color: #374151;
+}
+
+.workflow-editor {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.8rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.workflow-hint {
+  margin: 0;
+  color: #6b7280;
+}
+
+.workflow-grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.workflow-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.workflow-question {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.workflow-answer {
+  min-height: 78px;
+  resize: vertical;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+}
+
 .chat-modal {
   position: fixed;
   inset: 0;
