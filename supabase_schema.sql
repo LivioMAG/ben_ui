@@ -69,8 +69,16 @@ set email = excluded.email,
 create table if not exists public.chat_threads (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles(id) on delete cascade,
+  chat_type integer not null default 0,
+  target_document_id uuid,
+  target_table text,
   created_at timestamptz not null default now()
 );
+
+alter table public.chat_threads
+  add column if not exists chat_type integer not null default 0,
+  add column if not exists target_document_id uuid,
+  add column if not exists target_table text;
 
 create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),

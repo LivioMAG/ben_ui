@@ -23,12 +23,14 @@ const state = {
   supabase: null,
   session: null,
   currentThreadId: null,
-  pollTimer: null,
+  chatPollTimer: null,
+  workflowPollTimer: null,
   shownAssistantMessageIds: new Set(),
   campaigns: [],
   selectedCampaignId: null,
   workflows: [],
   selectedWorkflowId: null,
+  workflowSnapshot: null,
 };
 
 const ui = {
@@ -69,6 +71,16 @@ const ui = {
   workflowEditorTitle: document.getElementById('workflowEditorTitle'),
   workflowGrid: document.getElementById('workflowGrid'),
   saveWorkflowBtn: document.getElementById('saveWorkflowBtn'),
+  workflowModal: document.getElementById('workflowModal'),
+  workflowModalTitle: document.getElementById('workflowModalTitle'),
+  closeWorkflowModalBtn: document.getElementById('closeWorkflowModalBtn'),
+  workflowTimeline: document.getElementById('workflowTimeline'),
+  workflowDocId: document.getElementById('workflowDocId'),
+  workflowTableName: document.getElementById('workflowTableName'),
+  workflowThreadId: document.getElementById('workflowThreadId'),
+  workflowChatMessages: document.getElementById('workflowChatMessages'),
+  workflowChatForm: document.getElementById('workflowChatForm'),
+  workflowChatInput: document.getElementById('workflowChatInput'),
 };
 
 function setAuthUi() {
@@ -83,6 +95,9 @@ function setAuthUi() {
   if (!loggedIn) {
     ui.campaignOverview.classList.add('hidden');
     ui.campaignDetail.classList.add('hidden');
+    ui.workflowModal.classList.add('hidden');
+    clearChatPolling();
+    clearWorkflowPolling();
     return;
   }
 
@@ -113,10 +128,17 @@ function addAssistantMessageIfNew(row) {
   return true;
 }
 
-function clearPolling() {
-  if (state.pollTimer) {
-    clearInterval(state.pollTimer);
-    state.pollTimer = null;
+function clearChatPolling() {
+  if (state.chatPollTimer) {
+    clearInterval(state.chatPollTimer);
+    state.chatPollTimer = null;
+  }
+}
+
+function clearWorkflowPolling() {
+  if (state.workflowPollTimer) {
+    clearInterval(state.workflowPollTimer);
+    state.workflowPollTimer = null;
   }
 }
 
@@ -235,15 +257,55 @@ function getSelectedWorkflow() {
   return state.workflows.find((workflow) => workflow.id === state.selectedWorkflowId) || null;
 }
 
+function computeWorkflowProgress(workflow) {
+  let completed = 0;
+  for (let index = 1; index <= 7; index += 1) {
+    if (workflow[`q${index}_is_valid`]) {
+      completed += 1;
+    }
+  }
+
+  return {
+    completed,
+    current: Math.min(completed + 1, 7),
+  };
+}
+
+function renderWorkflowTimeline(workflow) {
+  ui.workflowTimeline.innerHTML = '';
+  const progress = computeWorkflowProgress(workflow);
+
+  for (let index = 1; index <= 7; index += 1) {
+    const item = document.createElement('div');
+    item.className = 'timeline-item';
+    const valid = Boolean(workflow[`q${index}_is_valid`]);
+    const isCurrent = index === progress.current && !valid;
+    item.classList.toggle('is-valid', valid);
+    item.classList.toggle('is-current', isCurrent);
+    item.innerHTML = `
+      <span class="timeline-dot">${valid ? '✓' : index}</span>
+      <div class="timeline-text">
+        <strong>Schritt ${index}</strong>
+        <small>${valid ? 'true' : 'false'}</small>
+      </div>
+    `;
+    ui.workflowTimeline.appendChild(item);
+  }
+}
+
 function renderWorkflowEditor(workflow) {
   if (!workflow) {
-    ui.workflowEditor.classList.add('hidden');
     ui.workflowGrid.innerHTML = '';
     return;
   }
 
   ui.workflowEditor.classList.remove('hidden');
-  ui.workflowEditorTitle.textContent = `Zielgruppe bearbeiten · ${workflow.final_summary || 'Neue Zielgruppe'}`;
+  ui.workflowEditorTitle.textContent = `Zielgruppe · ${workflow.final_summary || 'Neue Zielgruppe'}`;
+  ui.workflowModalTitle.textContent = `Zielgruppe · ${workflow.final_summary || 'Neue Zielgruppe'}`;
+  ui.workflowDocId.textContent = workflow.id;
+  ui.workflowTableName.textContent = 'campaign_target_audiences';
+  ui.workflowThreadId.textContent = state.currentThreadId || '–';
+  renderWorkflowTimeline(workflow);
 
   ui.workflowGrid.innerHTML = '';
   for (let index = 1; index <= 7; index += 1) {
@@ -274,12 +336,13 @@ function renderWorkflows() {
   ui.workflowEmpty.classList.add('hidden');
 
   state.workflows.forEach((workflow) => {
+    const progress = computeWorkflowProgress(workflow);
     const card = document.createElement('article');
     card.className = 'workflow-card';
     card.innerHTML = `
       <strong>${workflow.final_summary || 'Zusammenfassung noch leer'}</strong>
-      <p>Status: ${workflow.status} · Letzter Schritt: ${workflow.last_completed_step || 0}/7</p>
-      <button type="button" data-open-workflow="${workflow.id}">Details öffnen</button>
+      <p>Status: ${workflow.status} · Fortschritt: ${progress.completed}/7</p>
+      <button type="button" data-open-workflow="${workflow.id}">Im Popup öffnen</button>
     `;
     ui.workflowCards.appendChild(card);
   });
@@ -315,6 +378,7 @@ function backToCampaignOverview() {
   state.selectedWorkflowId = null;
   ui.campaignOverview.classList.remove('hidden');
   ui.campaignDetail.classList.add('hidden');
+  closeWorkflowModal().catch(() => {});
 }
 
 async function loadCampaigns() {
@@ -392,6 +456,10 @@ async function createWorkflow() {
   }
 
   await loadWorkflows();
+  const newestWorkflow = state.workflows[0];
+  if (newestWorkflow) {
+    await openWorkflowModal(newestWorkflow.id);
+  }
 }
 
 async function saveWorkflow() {
@@ -537,7 +605,7 @@ async function verifyOtp() {
   }
 }
 
-async function createFreshThread() {
+async function createFreshThread({ chatType = 0, targetDocumentId = null, targetTable = null } = {}) {
   await ensureProfile(state.session.user);
 
   if (state.currentThreadId) {
@@ -547,7 +615,12 @@ async function createFreshThread() {
 
   const { data, error } = await state.supabase
     .from('chat_threads')
-    .insert({ profile_id: state.session.user.id })
+    .insert({
+      profile_id: state.session.user.id,
+      chat_type: chatType,
+      target_document_id: targetDocumentId,
+      target_table: targetTable,
+    })
     .select()
     .single();
 
@@ -560,7 +633,7 @@ async function createFreshThread() {
 }
 
 async function deleteCurrentThread() {
-  clearPolling();
+  clearChatPolling();
   if (!state.currentThreadId) {
     return;
   }
@@ -571,9 +644,9 @@ async function deleteCurrentThread() {
 }
 
 async function pollForAssistantReply(lastUserMessageCreatedAt) {
-  clearPolling();
+  clearChatPolling();
 
-  state.pollTimer = setInterval(async () => {
+  state.chatPollTimer = setInterval(async () => {
     const { data, error } = await state.supabase
       .from('chat_messages')
       .select('id, message, created_at')
@@ -590,7 +663,7 @@ async function pollForAssistantReply(lastUserMessageCreatedAt) {
     if (data && data.length > 0) {
       const appended = addAssistantMessageIfNew(data[0]);
       if (appended) {
-        clearPolling();
+        clearChatPolling();
       }
     }
   }, 2000);
@@ -627,7 +700,7 @@ async function sendChatMessage(event) {
 async function openChat() {
   try {
     ui.chatMessages.innerHTML = '';
-    await createFreshThread();
+    await createFreshThread({ chatType: 0 });
     ui.chatModal.classList.remove('hidden');
   } catch (error) {
     alert(`Chat konnte nicht geöffnet werden: ${error.message}`);
@@ -638,6 +711,140 @@ async function closeChat() {
   ui.chatModal.classList.add('hidden');
   ui.chatMessages.innerHTML = '';
   await deleteCurrentThread();
+}
+
+async function refreshSelectedWorkflow() {
+  const workflow = getSelectedWorkflow();
+  if (!workflow || !state.session?.user?.id) {
+    return;
+  }
+
+  const { data, error } = await state.supabase
+    .from('campaign_target_audiences')
+    .select('*')
+    .eq('id', workflow.id)
+    .eq('profile_id', state.session.user.id)
+    .single();
+
+  if (error || !data) {
+    return;
+  }
+
+  const snapshot = JSON.stringify({
+    last_completed_step: data.last_completed_step,
+    current_step: data.current_step,
+    status: data.status,
+    q1_is_valid: data.q1_is_valid,
+    q2_is_valid: data.q2_is_valid,
+    q3_is_valid: data.q3_is_valid,
+    q4_is_valid: data.q4_is_valid,
+    q5_is_valid: data.q5_is_valid,
+    q6_is_valid: data.q6_is_valid,
+    q7_is_valid: data.q7_is_valid,
+  });
+
+  if (snapshot === state.workflowSnapshot) {
+    return;
+  }
+
+  state.workflowSnapshot = snapshot;
+  state.workflows = state.workflows.map((entry) => (entry.id === data.id ? data : entry));
+  renderWorkflows();
+}
+
+function startWorkflowPolling() {
+  clearWorkflowPolling();
+  state.workflowPollTimer = setInterval(() => {
+    refreshSelectedWorkflow().catch(() => {});
+  }, 2500);
+}
+
+async function openWorkflowModal(workflowId) {
+  state.selectedWorkflowId = workflowId;
+  const workflow = getSelectedWorkflow();
+  if (!workflow) {
+    return;
+  }
+
+  ui.workflowChatMessages.innerHTML = '';
+  await createFreshThread({
+    chatType: 1,
+    targetDocumentId: workflow.id,
+    targetTable: 'campaign_target_audiences',
+  });
+
+  ui.workflowThreadId.textContent = state.currentThreadId;
+  renderWorkflowEditor(workflow);
+  state.workflowSnapshot = '';
+  ui.workflowModal.classList.remove('hidden');
+  startWorkflowPolling();
+}
+
+async function closeWorkflowModal() {
+  ui.workflowModal.classList.add('hidden');
+  ui.workflowChatMessages.innerHTML = '';
+  clearWorkflowPolling();
+  state.workflowSnapshot = null;
+  await deleteCurrentThread();
+}
+
+async function sendWorkflowChatMessage(event) {
+  event.preventDefault();
+  const message = ui.workflowChatInput.value.trim();
+  if (!message || !state.currentThreadId) {
+    return;
+  }
+
+  const { data, error } = await state.supabase
+    .from('chat_messages')
+    .insert({
+      thread_id: state.currentThreadId,
+      role: 'user',
+      message,
+    })
+    .select('created_at')
+    .single();
+
+  if (error) {
+    alert(`Nachricht konnte nicht gespeichert werden: ${error.message}`);
+    return;
+  }
+
+  const node = document.createElement('div');
+  node.className = 'message user';
+  node.textContent = message;
+  ui.workflowChatMessages.appendChild(node);
+  ui.workflowChatMessages.scrollTop = ui.workflowChatMessages.scrollHeight;
+  ui.workflowChatInput.value = '';
+
+  clearChatPolling();
+  state.chatPollTimer = setInterval(async () => {
+    const { data: assistantData, error: assistantError } = await state.supabase
+      .from('chat_messages')
+      .select('id, message, created_at')
+      .eq('thread_id', state.currentThreadId)
+      .eq('role', 'assistant')
+      .gt('created_at', data.created_at)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (assistantError || !assistantData?.length) {
+      return;
+    }
+
+    const row = assistantData[0];
+    if (state.shownAssistantMessageIds.has(row.id)) {
+      return;
+    }
+    state.shownAssistantMessageIds.add(row.id);
+
+    const replyNode = document.createElement('div');
+    replyNode.className = 'message bot';
+    replyNode.textContent = row.message;
+    ui.workflowChatMessages.appendChild(replyNode);
+    ui.workflowChatMessages.scrollTop = ui.workflowChatMessages.scrollHeight;
+    clearChatPolling();
+  }, 2000);
 }
 
 function setupTabs() {
@@ -679,9 +886,12 @@ function bindEvents() {
       return;
     }
 
-    state.selectedWorkflowId = button.dataset.openWorkflow;
-    renderWorkflowEditor(getSelectedWorkflow());
+    openWorkflowModal(button.dataset.openWorkflow).catch((error) => alert(error.message));
   });
+  ui.closeWorkflowModalBtn.addEventListener('click', () => {
+    closeWorkflowModal().catch((error) => alert(error.message));
+  });
+  ui.workflowChatForm.addEventListener('submit', sendWorkflowChatMessage);
 
   ui.openChatBtn.addEventListener('click', openChat);
   ui.closeChatBtn.addEventListener('click', closeChat);
