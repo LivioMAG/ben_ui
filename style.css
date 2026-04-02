@@ -376,12 +376,11 @@ button:disabled {
 
 .workflow-modal-body {
   display: grid;
-  grid-template-columns: 280px 1fr 360px;
+  grid-template-columns: 300px minmax(440px, 1fr);
   min-height: 0;
 }
 
 .workflow-timeline-panel,
-.workflow-content-panel,
 .workflow-chat-panel {
   padding: 1rem;
   min-height: 0;
@@ -389,38 +388,24 @@ button:disabled {
 
 .workflow-timeline-panel {
   border-right: 1px solid rgba(148, 163, 184, 0.25);
-}
-
-.workflow-content-panel {
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  gap: 0.75rem;
-  border-right: 1px solid rgba(148, 163, 184, 0.25);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.75), rgba(6, 78, 59, 0.2));
 }
 
 .workflow-chat-panel {
   display: grid;
   grid-template-rows: auto 1fr auto;
+  gap: 0.5rem;
 }
 
-.workflow-doc-meta {
-  border: 1px solid rgba(59, 130, 246, 0.45);
-  border-radius: 12px;
-  padding: 0.75rem;
-  background: rgba(30, 41, 59, 0.4);
+.workflow-progress-hint {
+  margin: 0.4rem 0 0.75rem;
+  color: #a7f3d0;
   font-size: 0.9rem;
-  display: grid;
-  gap: 0.4rem;
-}
-
-.workflow-doc-meta span {
-  color: #93c5fd;
-  word-break: break-all;
 }
 
 .workflow-timeline {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.65rem;
 }
 
 .timeline-item {
@@ -428,21 +413,25 @@ button:disabled {
   grid-template-columns: auto 1fr;
   gap: 0.6rem;
   align-items: center;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  border-radius: 10px;
-  padding: 0.5rem;
-  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  padding: 0.62rem;
+  background: rgba(15, 23, 42, 0.45);
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
 }
 
 .timeline-dot {
   width: 30px;
   height: 30px;
   border-radius: 999px;
-  border: 1px solid #64748b;
+  border: 1px solid #475569;
   display: grid;
   place-items: center;
   font-weight: 700;
   font-size: 0.9rem;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.95);
+  transition: transform 220ms ease, background 220ms ease, color 220ms ease;
 }
 
 .timeline-text small {
@@ -450,18 +439,36 @@ button:disabled {
 }
 
 .timeline-item.is-valid {
-  border-color: rgba(52, 211, 153, 0.7);
+  border-color: rgba(52, 211, 153, 0.85);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.25), 0 0 28px rgba(16, 185, 129, 0.24);
+  transform: translateX(4px);
+  background: linear-gradient(120deg, rgba(6, 78, 59, 0.36), rgba(15, 23, 42, 0.55));
+  animation: timeline-pop 380ms ease;
 }
 
 .timeline-item.is-valid .timeline-dot {
-  background: #10b981;
+  background: radial-gradient(circle at 30% 30%, #6ee7b7, #10b981 64%, #047857);
   border-color: #10b981;
   color: #022c22;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.24);
+  transform: scale(1.05);
 }
 
 .timeline-item.is-current {
-  border-color: rgba(96, 165, 250, 0.85);
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35) inset;
+  border-color: rgba(16, 185, 129, 0.95);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.45) inset, 0 0 24px rgba(16, 185, 129, 0.24);
+}
+
+.timeline-item.is-current .timeline-dot {
+  border-color: #34d399;
+  color: #a7f3d0;
+}
+
+.timeline-item.is-current .timeline-text strong::after {
+  content: ' • läuft';
+  color: #6ee7b7;
+  font-size: 0.86rem;
+  font-weight: 600;
 }
 
 .workflow-modal .chat-messages {
@@ -476,14 +483,32 @@ button:disabled {
   background: transparent;
 }
 
+@keyframes timeline-pop {
+  0% {
+    transform: translateX(0) scale(0.98);
+    opacity: 0.72;
+  }
+  65% {
+    transform: translateX(6px) scale(1.01);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(4px) scale(1);
+  }
+}
+
 @media (max-width: 1200px) {
   .workflow-modal-body {
-    grid-template-columns: 220px 1fr;
-    grid-template-rows: 1fr auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
   }
 
   .workflow-chat-panel {
-    grid-column: 1 / span 2;
     border-top: 1px solid rgba(148, 163, 184, 0.25);
+  }
+
+  .workflow-timeline-panel {
+    border-right: none;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
   }
 }
