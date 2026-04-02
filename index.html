@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jimmy Marketing Assistant</title>
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="popups/target-popup.css" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
@@ -146,33 +147,9 @@
       </div>
     </section>
 
-    <section id="workflowModal" class="workflow-modal hidden">
-      <div class="workflow-modal-window">
-        <div class="workflow-modal-header">
-          <h3 id="workflowModalTitle">Zielgruppe</h3>
-          <button id="closeWorkflowModalBtn" class="ghost">Schließen</button>
-        </div>
+    <div id="targetPopupMount"></div>
 
-        <div class="workflow-modal-body">
-          <aside class="workflow-timeline-panel">
-            <h4>Fortschritt</h4>
-            <p class="workflow-progress-hint">Ziehe gefüllte Schritte per Drag & Drop in den Chat, um sie sofort zu senden.</p>
-            <div id="workflowTimeline" class="workflow-timeline"></div>
-          </aside>
-
-          <section class="workflow-chat-panel">
-            <h4>Workflow-Chat</h4>
-            <p class="workflow-hint">Schreib einfach im Chat – der Bot füllt die Felder im Hintergrund automatisch.</p>
-            <div id="workflowChatMessages" class="chat-messages"></div>
-            <form id="workflowChatForm" class="chat-input-row">
-              <input id="workflowChatInput" type="text" placeholder="Nachricht schreiben ..." autocomplete="off" required />
-              <button type="submit">Senden</button>
-            </form>
-          </section>
-        </div>
-      </div>
-    </section>
-
+    <script src="popups/target-popup.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
