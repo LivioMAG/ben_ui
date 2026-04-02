@@ -204,32 +204,32 @@ drop policy if exists "campaigns_owner_select" on public.campaigns;
 drop policy if exists "campaigns_owner_insert" on public.campaigns;
 drop policy if exists "campaigns_owner_update" on public.campaigns;
 drop policy if exists "campaigns_owner_delete" on public.campaigns;
-drop policy if exists "Users can view own target audience workflows" on public.target_audience_workflows;
-drop policy if exists "Users can insert own target audience workflows" on public.target_audience_workflows;
-drop policy if exists "Users can update own target audience workflows" on public.target_audience_workflows;
-drop policy if exists "Users can delete own target audience workflows" on public.target_audience_workflows;
+drop policy if exists "Users can view own target audience workflows" on public.campaign_target_audiences;
+drop policy if exists "Users can insert own target audience workflows" on public.campaign_target_audiences;
+drop policy if exists "Users can update own target audience workflows" on public.campaign_target_audiences;
+drop policy if exists "Users can delete own target audience workflows" on public.campaign_target_audiences;
 
 create policy "Users can view own target audience workflows"
-on public.target_audience_workflows
+on public.campaign_target_audiences
 for select
 to authenticated
 using (profile_id = auth.uid());
 
 create policy "Users can insert own target audience workflows"
-on public.target_audience_workflows
+on public.campaign_target_audiences
 for insert
 to authenticated
 with check (profile_id = auth.uid());
 
 create policy "Users can update own target audience workflows"
-on public.target_audience_workflows
+on public.campaign_target_audiences
 for update
 to authenticated
 using (profile_id = auth.uid())
 with check (profile_id = auth.uid());
 
 create policy "Users can delete own target audience workflows"
-on public.target_audience_workflows
+on public.campaign_target_audiences
 for delete
 to authenticated
 using (profile_id = auth.uid());
@@ -245,4 +245,4 @@ grant select, insert, update on table public.profiles to authenticated;
 grant select, insert, delete on table public.chat_threads to authenticated;
 grant select, insert, delete on table public.chat_messages to authenticated;
 grant select, insert, update, delete on table public.campaigns to authenticated;
-grant select, insert, update, delete on table public.target_audience_workflows to authenticated;
+grant select, insert, update, delete on table public.campaign_target_audiences to authenticated;
