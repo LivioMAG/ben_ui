@@ -405,53 +405,101 @@ button:disabled {
 
 .workflow-timeline {
   display: grid;
-  gap: 0.65rem;
+  grid-template-columns: repeat(7, minmax(170px, 1fr));
+  gap: 0.55rem;
+  align-items: stretch;
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
 }
 
 .timeline-item {
+  position: relative;
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.6rem;
-  align-items: center;
+  grid-template-rows: auto 1fr auto;
+  gap: 0.55rem;
   border: 1px solid rgba(148, 163, 184, 0.24);
   border-radius: 12px;
-  padding: 0.62rem;
+  padding: 0.62rem 0.62rem 0.56rem;
   background: rgba(15, 23, 42, 0.45);
-  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+  min-height: 170px;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, opacity 220ms ease;
 }
 
-.timeline-dot {
-  width: 30px;
-  height: 30px;
+.timeline-item[draggable='true'] {
+  cursor: grab;
+}
+
+.timeline-item[draggable='true']:active {
+  cursor: grabbing;
+}
+
+.timeline-beam {
+  height: 4px;
   border-radius: 999px;
-  border: 1px solid #475569;
+  width: 100%;
+  background: rgba(100, 116, 139, 0.4);
+}
+
+.timeline-beam.is-active {
+  background: linear-gradient(90deg, #34d399, #22d3ee);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.45);
+}
+
+.timeline-text {
   display: grid;
-  place-items: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #cbd5e1;
-  background: rgba(15, 23, 42, 0.95);
-  transition: transform 220ms ease, background 220ms ease, color 220ms ease;
+  gap: 0.35rem;
+  align-content: start;
+}
+
+.timeline-text strong {
+  font-size: 0.88rem;
 }
 
 .timeline-text small {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 4.4em;
+  line-height: 1.1rem;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.timeline-status {
+  justify-self: end;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  border: 1px solid #475569;
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.timeline-status.is-ok {
+  background: radial-gradient(circle at 30% 30%, #6ee7b7, #10b981 64%, #047857);
+  border-color: #10b981;
+  color: #022c22;
+}
+
+.timeline-status.is-issue {
+  background: radial-gradient(circle at 35% 30%, #fca5a5, #ef4444 64%, #b91c1c);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+.timeline-status.is-empty {
   color: #94a3b8;
 }
 
 .timeline-item.is-valid {
   border-color: rgba(52, 211, 153, 0.85);
   box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.25), 0 0 28px rgba(16, 185, 129, 0.24);
-  transform: translateX(4px);
+  transform: translateY(-2px);
   background: linear-gradient(120deg, rgba(6, 78, 59, 0.36), rgba(15, 23, 42, 0.55));
   animation: timeline-pop 380ms ease;
-}
-
-.timeline-item.is-valid .timeline-dot {
-  background: radial-gradient(circle at 30% 30%, #6ee7b7, #10b981 64%, #047857);
-  border-color: #10b981;
-  color: #022c22;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.24);
-  transform: scale(1.05);
 }
 
 .timeline-item.is-current {
@@ -459,16 +507,16 @@ button:disabled {
   box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.45) inset, 0 0 24px rgba(16, 185, 129, 0.24);
 }
 
-.timeline-item.is-current .timeline-dot {
-  border-color: #34d399;
-  color: #a7f3d0;
-}
-
 .timeline-item.is-current .timeline-text strong::after {
   content: ' • läuft';
   color: #6ee7b7;
   font-size: 0.86rem;
   font-weight: 600;
+}
+
+.workflow-modal .chat-messages.is-drop-target {
+  border-color: rgba(52, 211, 153, 0.9);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.45), 0 0 18px rgba(16, 185, 129, 0.25);
 }
 
 .workflow-modal .chat-messages {

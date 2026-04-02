@@ -19,6 +19,16 @@ const DEFAULT_QUESTIONS = [
   'Kann ich diese Zielgruppe gezielt erreichen? (z. B. über Plattformen, Communities, Interessen, Kanäle)',
 ];
 
+const WORKFLOW_STEP_CONFIG = [
+  { key: 'usage', label: 'Nutzung klären' },
+  { key: 'hypothesis', label: 'Hypothesen' },
+  { key: 'segmentation', label: 'Segmentierung' },
+  { key: 'motivation', label: 'Motivation' },
+  { key: 'trigger', label: 'Trigger' },
+  { key: 'payment', label: 'Zahlungsfähigkeit' },
+  { key: 'reachability', label: 'Erreichbarkeit' },
+];
+
 const state = {
   supabase: null,
   session: null,
@@ -271,17 +281,34 @@ function renderWorkflowTimeline(workflow) {
   const progress = computeWorkflowProgress(workflow);
 
   for (let index = 1; index <= 7; index += 1) {
+    const stepConfig = WORKFLOW_STEP_CONFIG[index - 1];
+    const answer = (workflow[`q${index}_answer`] || '').trim();
+    const aiComment = (workflow[`q${index}_ai_comment`] || '').trim();
     const item = document.createElement('div');
     item.className = 'timeline-item';
     const valid = Boolean(workflow[`q${index}_is_valid`]);
     const isCurrent = index === progress.current && !valid;
+    const hasContent = Boolean(answer);
+    const hasAiIssue = Boolean(aiComment);
+    const statusSymbol = hasContent ? (hasAiIssue ? '❗' : '✓') : '•';
+    const statusClass = hasContent ? (hasAiIssue ? 'is-issue' : 'is-ok') : 'is-empty';
+    const answerText = hasContent ? answer : 'Noch keine Antwort vorhanden';
+    const connectorClass = index <= progress.completed ? 'is-active' : '';
     item.classList.toggle('is-valid', valid);
     item.classList.toggle('is-current', isCurrent);
+    item.classList.toggle('is-filled', hasContent);
+    item.setAttribute('draggable', hasContent ? 'true' : 'false');
+    item.dataset.stepIndex = String(index);
+    item.dataset.stepLabel = stepConfig.label;
+    item.dataset.dragMessage = `${stepConfig.label} (Q${index}): ${answerText}`;
     item.innerHTML = `
-      <span class="timeline-dot">${valid ? '✓' : index}</span>
+      <span class="timeline-beam ${connectorClass}" aria-hidden="true"></span>
       <div class="timeline-text">
-        <strong>Schritt ${index}</strong>
-        <small>${valid ? 'true' : 'false'}</small>
+        <strong>Schritt ${index}: ${stepConfig.label}</strong>
+        <small>${answerText}</small>
+      </div>
+      <div class="timeline-status ${statusClass}" title="${hasAiIssue ? aiComment : 'Kein AI-Kommentar vorhanden'}">
+        ${statusSymbol}
       </div>
     `;
     ui.workflowTimeline.appendChild(item);
@@ -720,6 +747,14 @@ async function closeWorkflowModal() {
 async function sendWorkflowChatMessage(event) {
   event.preventDefault();
   const message = ui.workflowChatInput.value.trim();
+  if (!message) {
+    return;
+  }
+
+  await sendWorkflowTextMessage(message);
+}
+
+async function sendWorkflowTextMessage(message) {
   if (!message || !state.currentThreadId) {
     return;
   }
@@ -776,6 +811,16 @@ async function sendWorkflowChatMessage(event) {
   }, 2000);
 }
 
+async function handleWorkflowCardDrop(event) {
+  event.preventDefault();
+  const text = event.dataTransfer?.getData('text/plain')?.trim();
+  if (!text) {
+    return;
+  }
+
+  await sendWorkflowTextMessage(text);
+}
+
 function setupTabs() {
   document.querySelectorAll('.tab').forEach((tab) => {
     tab.addEventListener('click', () => {
@@ -820,6 +865,27 @@ function bindEvents() {
     closeWorkflowModal().catch((error) => alert(error.message));
   });
   ui.workflowChatForm.addEventListener('submit', sendWorkflowChatMessage);
+  ui.workflowTimeline.addEventListener('dragstart', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const card = target?.closest('.timeline-item');
+    if (!card || card.getAttribute('draggable') !== 'true') {
+      return;
+    }
+
+    event.dataTransfer.setData('text/plain', card.dataset.dragMessage || '');
+    event.dataTransfer.effectAllowed = 'copy';
+  });
+  ui.workflowChatMessages.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    ui.workflowChatMessages.classList.add('is-drop-target');
+  });
+  ui.workflowChatMessages.addEventListener('dragleave', () => {
+    ui.workflowChatMessages.classList.remove('is-drop-target');
+  });
+  ui.workflowChatMessages.addEventListener('drop', (event) => {
+    ui.workflowChatMessages.classList.remove('is-drop-target');
+    handleWorkflowCardDrop(event).catch((error) => alert(error.message));
+  });
 
   ui.openChatBtn.addEventListener('click', openChat);
   ui.closeChatBtn.addEventListener('click', closeChat);
